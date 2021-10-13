@@ -15,7 +15,6 @@ void setup()
     initComponents();
 
     flash(0);
-    Serial.print(USDevice.distance());
     
 }
 
