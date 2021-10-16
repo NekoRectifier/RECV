@@ -3,7 +3,7 @@
 using namespace std;
 
 #ifdef __AVR__
-    #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
+#include <avr/power.h> // Required for 16 MHz Adafruit Trinket
 #endif
 
 //consants definitions
@@ -26,7 +26,7 @@ void initComponents();
 void initNeoPixel();
 void initUltraSonic();
 void colorWipe(uint32_t color, int wait);
-void flash(uint32_t color,int perTime, int times);
+void flash(uint32_t color, int perTime, int times);
 double getDistance();
 void beginTaskSequence();
 
@@ -34,27 +34,22 @@ void beginTaskSequence();
 void setup()
 {
     Serial.begin(9600);
-    delay(100);
     initComponents();
 
-    strip.clear();
-    flash(strip.Color(255,100,100),200,2);
-    delay(100);
-    beginTaskSequence();
+    //beginTaskSequence();
 }
 
 void loop()
 {
-    //Serial.println(getDistance());
 }
 
-
 //main body of sub_functions
-void initComponents() 
+void initComponents()
 {
     initNeoPixel();
-    //flash(strip.Color(128,128,0),150,4);
-    initUltraSonic();
+    strip.clear();
+    flash(strip.Color(128, 128, 0), 150, 4); //yellow
+    //initUltraSonic();
     pinMode(CRASH_pin, INPUT);
     //TODO motors need to be initialized...
 }
@@ -63,58 +58,46 @@ void initUltraSonic()
 {
     pinMode(13, OUTPUT);
     pinMode(11, INPUT);
-    delay(200);
-    //TODO: Show different light pattern correspond to each task
-    Serial.println(getDistance());
-    delay(700);
-    Serial.println(getDistance());
-    delay(700);
-    Serial.println(getDistance());
-    delay(700);
-    Serial.println(getDistance());
-    delay(700);
-    Serial.println(getDistance());
-    delay(700);
-    Serial.println(getDistance());
-    delay(700);
-    Serial.println(getDistance());
-    delay(700);
-    Serial.println(getDistance());
-    delay(700);
-    Serial.println(getDistance());
-    delay(700);
-    Serial.println(getDistance());
-    delay(700);
-    Serial.println(getDistance());
-    delay(700);
-    Serial.println(getDistance());
-    delay(700);
-    Serial.println(getDistance());
-    
+    delay(50);
+    //Show different light pattern correspond to each task
+    //flash(strip.Color(0,255,255),50,3); //Blue
+    int i = 0;
+    double temp = 0.0;
+    while (i < 5)
+    {
+        i++;
+        temp = temp + getDistance();
+    }
+
+    temp = temp / 5;
+    Serial.println(temp);
+    if (temp > 100.0 && temp < 2000.0)
+    {
+        flash(strip.Color(0, 255, 0), 100, 1); //Green
+        initialDistance = temp;
+    }
+    else
+    {
+        flash(strip.Color(255, 0, 0), 100, 2); //Red
+    }
 }
 
 void initNeoPixel()
 {
-    //an harmless supportment code for Adafruit Trinket 5V 16 MHz.
-    #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
-        clock_prescale_set(clock_div_1);
-    #endif
+//an harmless supportment code for Adafruit Trinket 5V 16 MHz.
+#if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
+    clock_prescale_set(clock_div_1);
+#endif
 
     strip.begin();
-    strip.clear();   //Nya?
-
-    //strip.setBrightness(255);
-
-    colorWipe(strip.Color(127,127,127),50);
-    delay(5000);
-    strip.clear();
-
+    colorWipe(strip.Color(127, 127, 127), 150);
+    delay(1000);
 }
 
 //NeoPixel custom functions
 void colorWipe(uint32_t color, int wait)
 {
-    for(int i=0; i<strip.numPixels(); i++)
+    for (int i = 0; i < strip.numPixels(); i++)
     {
         strip.setPixelColor(i, color);
         strip.show();
@@ -122,10 +105,10 @@ void colorWipe(uint32_t color, int wait)
     }
 }
 
-void flash(uint32_t color,int perTime, int times)
+void flash(uint32_t color, int perTime, int times)
 {
 
-    for(int j = 0; j < times; j++)
+    /* for(int j = 0; j < times; j++)
     {
         strip.setPixelColor(0, color);
         strip.setPixelColor(1, color);
@@ -133,10 +116,19 @@ void flash(uint32_t color,int perTime, int times)
         strip.setPixelColor(7, color);
         strip.show();
         delay(perTime);
+        
+        
         strip.clear();
     }
+
+    strip.clear(); */
+
+    strip.setPixelColor(0, color);
+    strip.show();
+    delay(1000);
     strip.clear();
-    
+    delay(1000);
+    strip.show();
 }
 
 double getDistance()
@@ -145,7 +137,7 @@ double getDistance()
     //Origin merchant instance code, NOT modified yet.
 
     digitalWrite(13, LOW);
-    delayMicroseconds(13);
+    delayMicroseconds(2);
     digitalWrite(13, HIGH);
     delayMicroseconds(10);
     digitalWrite(13, LOW);
@@ -161,15 +153,21 @@ void beginTaskSequence()
     initialDistance = getDistance();
     double total = initialDistance + USS_CENTER_OFFSET;
 
-    if (total > 320.0 && total < 400.0) {
-        flash(strip.Color(255,255,255),100,2);
-    } else if(total > 240.0 && total < 320.0) {
-        flash(strip.Color(255,255,255),100,2);
-    } else if(total > 140.0 && total < 240.0) {
-        flash(strip.Color(255,255,255),100,2);
-    } else {
+    if (total > 320.0 && total < 400.0)
+    {
+        flash(strip.Color(255, 255, 255), 100, 2);
+    }
+    else if (total > 240.0 && total < 320.0)
+    {
+        flash(strip.Color(255, 255, 255), 100, 2);
+    }
+    else if (total > 140.0 && total < 240.0)
+    {
+        flash(strip.Color(255, 255, 255), 100, 2);
+    }
+    else
+    {
     }
 
     //motor.start();
-    
 }
