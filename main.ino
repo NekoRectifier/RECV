@@ -1,10 +1,6 @@
-#include <Adafruit_NeoPixel.h>
+#include "Adafruit_NeoPixel.h"
 
 using namespace std;
-
-#ifdef __AVR__
-#include <avr/power.h> // Required for 16 MHz Adafruit Trinket
-#endif
 
 //consants definitions
 #define LED_COUNT 8
@@ -26,7 +22,7 @@ void initComponents();
 void initNeoPixel();
 void initUltraSonic();
 void colorWipe(uint32_t color, int wait);
-void flash(uint32_t color, int perTime, int times);
+void flash(uint32_t color, int perTime, int times, int mode);
 double getDistance();
 void beginTaskSequence();
 
@@ -35,7 +31,6 @@ void setup()
 {
     Serial.begin(9600);
     initComponents();
-
     //beginTaskSequence();
 }
 
@@ -48,7 +43,7 @@ void initComponents()
 {
     initNeoPixel();
     strip.clear();
-    flash(strip.Color(128, 128, 0), 150, 4); //yellow
+    flash(strip.Color(128, 128, 0), 150, 4, 1); //yellow
     //initUltraSonic();
     pinMode(CRASH_pin, INPUT);
     //TODO motors need to be initialized...
@@ -73,22 +68,17 @@ void initUltraSonic()
     Serial.println(temp);
     if (temp > 100.0 && temp < 2000.0)
     {
-        flash(strip.Color(0, 255, 0), 100, 1); //Green
+        flash(strip.Color(0, 255, 0), 500, 1, 1); //Green
         initialDistance = temp;
     }
     else
     {
-        flash(strip.Color(255, 0, 0), 100, 2); //Red
+        flash(strip.Color(255, 0, 0), 500, 2, 1); //Red
     }
 }
 
 void initNeoPixel()
 {
-//an harmless supportment code for Adafruit Trinket 5V 16 MHz.
-#if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
-    clock_prescale_set(clock_div_1);
-#endif
-
     strip.begin();
     colorWipe(strip.Color(127, 127, 127), 150);
     delay(1000);
@@ -105,29 +95,23 @@ void colorWipe(uint32_t color, int wait)
     }
 }
 
-void flash(uint32_t color, int perTime, int times)
+void flash(uint32_t color, int perTime, int times, int mode)
 {
-
-    /* for(int j = 0; j < times; j++)
+    for (int i = 0; i < times; i++)
     {
         strip.setPixelColor(0, color);
-        strip.setPixelColor(1, color);
-        strip.setPixelColor(6, color);
-        strip.setPixelColor(7, color);
         strip.show();
         delay(perTime);
-        
-        
-        strip.clear();
+
+        strip.setPixelColor(0, strip.Color(0, 0, 0));
+        strip.show();
+
+        delay(perTime);
+        strip.setPixelColor(0, color);
+        strip.show();
     }
 
-    strip.clear(); */
-
-    strip.setPixelColor(0, color);
-    strip.show();
-    delay(1000);
-    strip.clear();
-    delay(1000);
+    strip.setPixelColor(0, strip.Color(0, 0, 0));
     strip.show();
 }
 
@@ -149,25 +133,4 @@ double getDistance()
 
 void beginTaskSequence()
 {
-    //if ultrasonic module is fine...
-    initialDistance = getDistance();
-    double total = initialDistance + USS_CENTER_OFFSET;
-
-    if (total > 320.0 && total < 400.0)
-    {
-        flash(strip.Color(255, 255, 255), 100, 2);
-    }
-    else if (total > 240.0 && total < 320.0)
-    {
-        flash(strip.Color(255, 255, 255), 100, 2);
-    }
-    else if (total > 140.0 && total < 240.0)
-    {
-        flash(strip.Color(255, 255, 255), 100, 2);
-    }
-    else
-    {
-    }
-
-    //motor.start();
 }
