@@ -1,8 +1,11 @@
 #define MOTOR_1 9
 #define MOTOR_2 10
-#define PWMA 11      //PWM analog?
-#define ENCODER_A 2  //reading
+#define PWMA 11  //占空比电压调制
+#define ENCODER_A 2
 #define ENCODER_B 3
+#define LED 5
+
+#define TOTAL_PULSE_WHELL 1560
 
 volatile long encoder_A;
 volatile long encoder_B;
@@ -11,7 +14,7 @@ unsigned long curr_time, prev_time = 0;
 
 double velocity = 0.0;
 
-int pwm = 70;
+int pwm = 100;
 
 // 中断函数内所有的变量在声明时都应该加上volatile属性
 // Arduino Uno 仅支持2,3针脚作为中断引脚
@@ -22,6 +25,8 @@ void setup()
     pinMode(MOTOR_2, OUTPUT);
     pinMode(PWMA, OUTPUT);
 
+    pinMode(LED, OUTPUT);
+
     pinMode(ENCODER_A, INPUT);
     pinMode(ENCODER_B, INPUT);
 
@@ -29,21 +34,20 @@ void setup()
 
     digitalWrite(MOTOR_1, HIGH);
     digitalWrite(MOTOR_2, LOW);
+
     prev_time = millis();
 
-    attachInterrupt(0, ISR_enc_A, RISING);  //开始中断 函数:timer 模式:RISING
-    attachInterrupt(1, ISR_enc_B, RISING);
+    attachInterrupt(0, ISR_enc_A, CHANGE);  //开始中断 函数:timer 模式:RISING
+    attachInterrupt(1, ISR_enc_B, CHANGE);
+
+    analogWrite(PWMA, pwm);  //给定pwm模拟输出
+
     interrupts();
     // RISING 指在引脚由低电平转为高电平时触发
 }
 
 void loop()
 {
-    //设定旋转方向
-
-    //给定pwm模拟输出
-    analogWrite(PWMA, pwm);
-
     noInterrupts();
     Serial.print("ENC_LEFT: ");
     Serial.println(readEncoderValue(0));
@@ -51,11 +55,7 @@ void loop()
     Serial.print("ENC_RIGHT: ");
     Serial.println(readEncoderValue(1));
 
-    speedMeasure();
-    Serial.print("Velocity: ");
-    Serial.println(velocity);
-
-    delay(100);
+    lapRecognition();
     interrupts();
 }
 
@@ -84,6 +84,26 @@ long readEncoderValue(int seletor)
     }
     interrupts();
     return curr;
+}
+
+void lapRecognition()
+{
+    noInterrupts();
+
+    if (encoder_A >= TOTAL_PULSE_WHELL)
+    {
+        encoder_A = 0;
+        digitalWrite(MOTOR_1, LOW);
+        digitalWrite(MOTOR_2, LOW);
+    }
+    else if (encoder_B >= TOTAL_PULSE_WHELL)
+    {
+        digitalWrite(MOTOR_1, LOW);
+        digitalWrite(MOTOR_2, LOW);
+        encoder_B = 0;
+    }
+
+    interrupts();
 }
 
 bool speedMeasure()  //for high speed
