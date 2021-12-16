@@ -1,9 +1,16 @@
+#include "Adafruit_NeoPixel.h"
+
+using namespace std;
+
 #define MOTOR_1 9
 #define MOTOR_2 10
 #define PWMA 11  //占空比电压调制
 #define ENCODER_A 2
 #define ENCODER_B 3
+
 #define LED 5
+#define LED_COUNT 8
+Adafruit_NeoPixel strip(LED_COUNT, LED, NEO_GRB + NEO_KHZ800);
 
 #define TOTAL_PULSE_WHELL 1560
 
@@ -14,7 +21,7 @@ unsigned long curr_time, prev_time = 0;
 
 double velocity = 0.0;
 
-int pwm = 100;
+int pwm = 75;  //固定为该数值 正好
 
 // 中断函数内所有的变量在声明时都应该加上volatile属性
 // Arduino Uno 仅支持2,3针脚作为中断引脚
@@ -25,15 +32,16 @@ void setup()
     pinMode(MOTOR_2, OUTPUT);
     pinMode(PWMA, OUTPUT);
 
-    pinMode(LED, OUTPUT);
+    //pinMode(LED, OUTPUT);
 
     pinMode(ENCODER_A, INPUT);
     pinMode(ENCODER_B, INPUT);
 
     Serial.begin(9600);
+    //initLED();
 
-    digitalWrite(MOTOR_1, HIGH);
-    digitalWrite(MOTOR_2, LOW);
+    digitalWrite(MOTOR_1, LOW);
+    digitalWrite(MOTOR_2, HIGH);
 
     prev_time = millis();
 
@@ -57,6 +65,23 @@ void loop()
 
     lapRecognition();
     interrupts();
+}
+
+void colorWipe(uint32_t color, int wait)
+{
+    for (int i = 0; i < strip.numPixels(); i++)
+    {
+        strip.setPixelColor(i, color);
+        strip.show();
+        delay(wait);
+    }
+}
+
+void initLED()
+{
+    strip.begin();
+    colorWipe(strip.Color(255, 255, 24), 5000);
+    strip.clear();
 }
 
 void ISR_enc_A()
@@ -93,13 +118,13 @@ void lapRecognition()
     if (encoder_A >= TOTAL_PULSE_WHELL)
     {
         encoder_A = 0;
-        digitalWrite(MOTOR_1, LOW);
-        digitalWrite(MOTOR_2, LOW);
+        //        digitalWrite(MOTOR_1, LOW);
+        //        digitalWrite(MOTOR_2, LOW);
     }
     else if (encoder_B >= TOTAL_PULSE_WHELL)
     {
-        digitalWrite(MOTOR_1, LOW);
-        digitalWrite(MOTOR_2, LOW);
+        //        digitalWrite(MOTOR_1, LOW);
+        //        digitalWrite(MOTOR_2, LOW);
         encoder_B = 0;
     }
 
