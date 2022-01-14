@@ -1,164 +1,165 @@
-#include "Adafruit_NeoPixel.h"
+#include <ESP8266WiFiMulti.h>   //  ESP8266WiFiMulti库
+#include <ESP8266WebServer.h>
+#include "index.h"
 
-using namespace std;
+//#define MOTOR_A_POS 3
+//#define MOTOR_A_NEG D3
+//#define MOTOR_B_POS 1
+//#define MOTOR_B_NEG D8
+// (始终可用情况)
 
 // 针脚定义 开始
-#define MOTOR_A_POS A2
-#define MOTOR_A_NEG A3
-#define MOTOR_B_POS A4
-#define MOTOR_B_NEG A5
-#define ENCODER_A 0
-#define ENCODER_B 1
-#define ENCODER_C 2
-#define ENCODER_D 3
+#define MOTOR_A_POS 3
+#define MOTOR_A_NEG D3
+#define MOTOR_B_POS 1
+#define MOTOR_B_NEG D8
+// 不要改动! GPIO16 不能正常输出
+#define ENCODER_A D1
+//#define ENCODER_B D1
+#define ENCODER_C D2
+//#define ENCODER_D D3
+#define CRASH_BTN D7
 
-#define CRASH_BTN 7
-
-#define LED 5
-#define LED_COUNT 8
 //占空比电压调制
-#define PWMA 11
-#define PWMB 13
+#define PWMA D5
+#define PWMB D6
 //针脚定义结束
-
-Adafruit_NeoPixel strip(LED_COUNT, LED, NEO_GRB + NEO_KHZ800);
 
 #define TOTAL_PULSE_WHELL 1560
 
 volatile long encoder_A = 0;
-volatile long encoder_B = 0;
 volatile long encoder_C = 0;
-volatile long encoder_D = 0;
-volatile int flag_crash = 0;
-unsigned long curr_time, prev_time = 0;
-long odometer = 0;
+long prev_A, prev_C = 0;
+volatile long odometer = 0;
 double velocity_A = 0.0;
 double velocity_B = 0.0;
-int pwm = 80;
+short pwm_A = 90;
+short pwm_B = 90;
+int cycle = 0;
+volatile int flag = 0;
 
 // 中断函数内所有的变量在声明时都应该加上volatile属性
 
+ESP8266WiFiMulti wifi;
+ESP8266WebServer server(80);
+
 void setup()
 {
-    curr_time = prev_time = millis();
-    pinMode(MOTOR_A_POS, OUTPUT);
-    pinMode(MOTOR_A_NEG, OUTPUT);
-    pinMode(PWMA, OUTPUT);
-    pinMode(MOTOR_B_POS, OUTPUT);
-    pinMode(MOTOR_B_NEG, OUTPUT);
-    pinMode(PWMB, OUTPUT);
-    pinMode(LED_BUILTIN, OUTPUT);
-    pinMode(ENCODER_A, INPUT);
-    pinMode(ENCODER_B, INPUT);
-    pinMode(ENCODER_C, INPUT);
-    pinMode(ENCODER_D, INPUT);
-    pinMode(CRASH_BTN, INPUT);
+  //Serial.begin(115200);
 
-    Serial.begin(9600);
+  delay(3000);
 
-    digitalWrite(LED_BUILTIN, LOW);
-    digitalWrite(MOTOR_A_POS, LOW);
-    digitalWrite(MOTOR_A_NEG, HIGH);
-    digitalWrite(MOTOR_B_POS, LOW);
-    digitalWrite(MOTOR_B_NEG, HIGH);
+  pinMode(MOTOR_A_POS, OUTPUT);
+  pinMode(MOTOR_A_NEG, OUTPUT);
+  pinMode(PWMA, OUTPUT);
+  pinMode(MOTOR_B_POS, OUTPUT);
+  pinMode(MOTOR_B_NEG, OUTPUT);
+  pinMode(PWMB, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
 
-    prev_time = millis();
+  pinMode(ENCODER_A, INPUT);
+  //pinMode(ENCODER_B, INPUT);
+  pinMode(ENCODER_C, INPUT);
+  //pinMode(ENCODER_D, INPUT);
+  pinMode(CRASH_BTN, INPUT);
 
-    attachInterrupt(digitalPinToInterrupt(0), ISR_enc_A, RISING); //开始中断 函数:timer 模式:RISING
-    attachInterrupt(digitalPinToInterrupt(1), ISR_enc_B, RISING);
-    attachInterrupt(digitalPinToInterrupt(2), ISR_enc_C, RISING);
-    // attachInterrupt(digitalPinToInterrupt(3), ISR_enc_D, RISING);
+  digitalWrite(MOTOR_A_POS, HIGH);
+  digitalWrite(MOTOR_A_NEG, LOW);
+  digitalWrite(MOTOR_B_POS, HIGH);
+  digitalWrite(MOTOR_B_NEG, LOW);
 
-    attachInterrupt(digitalPinToInterrupt(7), crashDetect, RISING);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_A), ISR_enc_A, CHANGE); //开始中断 函数:timer 模式:RISING
+  attachInterrupt(digitalPinToInterrupt(ENCODER_C), ISR_enc_C, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(CRASH_BTN), crashDetect, RISING);
 
-    analogWrite(PWMA, pwm); //给定pwm模拟输出
-    analogWrite(PWMB, pwm);
+  analogWrite(PWMA, pwm_A); //给定pwm模拟输出
+  analogWrite(PWMB, pwm_B);
 
-    interrupts();
-    // RISING 指在引脚由低电平转为高电平时触发
+  wifi.addAP("HYX_WLAN", "86309602");
+  while(wifi.run() != WL_CONNECTED) {
+    delay(150);
+  }
+  server.on("/", handleRoot);
+  server.onNotFound(handleNotFound);
+  server.on("/update_ena", handleupdate_ena);
+  server.on("/update_enc", handleupdate_enc);
+  server.on("/update_odometer", handleupdate_odo);
+  server.begin();
 }
 
 void loop()
 {
-    noInterrupts();
-    // speedMeasure();
-
-    if (flag_crash == 1)
-    {
-        flag_crash == 2; //代表已处理
-        digitalWrite(LED_BUILTIN, HIGH);
-        odometer = encoder_B;
-        // TODO: 此处应对编码器数值做精准化处理
-        encoder_B = 0;
-        digitalWrite(MOTOR_A_POS, HIGH);
-        digitalWrite(MOTOR_A_NEG, LOW);
-        digitalWrite(MOTOR_B_POS, HIGH);
-        digitalWrite(MOTOR_B_NEG, LOW);
-    }
-
-    mileageCheck();
-    // curr_time = millis();
-    interrupts();
+  server.handleClient();
+  long avg = ((encoder_A + encoder_C)-odometer) / 2;
+  if (avg > odometer ) {
+    digitalWrite(MOTOR_A_NEG, LOW);
+    digitalWrite(MOTOR_B_NEG, LOW);
+  }
 }
 
-void ISR_enc_A()
-{
-    encoder_A++;
+void handleRoot() {   //处理网站根目录“/”的访问请求
+  String html = webpage;
+  server.send(200, "text/html", html);   // NodeMCU将调用此函数。
 }
 
-void ISR_enc_B()
-{
-    encoder_B++;
+void handleNotFound() {                                       // 当浏览器请求的网络资源无法在服务器找到时，
+  server.send(404, "text/plain", "404: Not found");   // NodeMCU将调用此函数。
 }
 
-void ISR_enc_C()
-{
-    encoder_C++;
+void handleupdate_ena() {
+  server.send(200, "text/plain", String(encoder_A));
 }
 
-// void ISR_enc_D()
-// {
-//     encoder_D++;
-// }
-
-void crashDetect()
-{
-    flag_crash = 1;
+void handleupdate_enc() {
+  server.send(200, "text/plain", String(encoder_C));
 }
 
-void mileageCheck() //用于控制车辆在终点处停下
-{
-    noInterrupts();
-    if (flag_crash == 2)
-    {
-        if (encoder_B >= odometer)
-        {
-            digitalWrite(MOTOR_A_POS, LOW);
-            digitalWrite(MOTOR_A_NEG, LOW);
-            digitalWrite(MOTOR_B_POS, LOW);
-            digitalWrite(MOTOR_B_NEG, LOW);
-        }
-    }
-    interrupts();
+void handleupdate_odo() {
+  server.send(200, "text/plain", String(odometer));
 }
 
-bool speedMeasure() // for high speed
+
+ICACHE_RAM_ATTR void ISR_enc_A()
 {
-    if (curr_time != prev_time)
-    {
-        long sub_time = curr_time - prev_time;
-        int len = (encoder_A / 1560) * 21.0486;
-        velocity_A = len / sub_time;
-        len = (encoder_C / 1560) * 21.0486;
-        velocity_B = len / sub_time;
-        prev_time = curr_time;
+  encoder_A++;
+}
 
-        encoder_A = encoder_C = 0;
+ICACHE_RAM_ATTR void ISR_enc_C()
+{
+  encoder_C++;
+}
 
-        Serial.print("Left Wheel:");
-        Serial.print(velocity_A);
-        Serial.print("\t");
-        Serial.print("Right Wheel:");
-        Serial.println(velocity_B);
-    }
+ICACHE_RAM_ATTR void crashDetect()
+{
+  digitalWrite(MOTOR_A_POS, LOW);
+  digitalWrite(MOTOR_A_NEG, HIGH);
+  digitalWrite(MOTOR_B_POS, LOW);
+  digitalWrite(MOTOR_B_NEG, HIGH);
+  
+  digitalWrite(LED_BUILTIN, HIGH);
+  flag = 1;
+  odometer = (encoder_A + encoder_C) / 2;
+}
+
+void speedAdjust() // for high speed
+{
+  u32 diff_A = encoder_A - prev_A;
+  u32 diff_C = encoder_C - prev_C;
+
+  velocity_A = diff_A / (3120);
+  velocity_B = diff_C / (3210);
+
+  if (velocity_A > velocity_B) {
+    pwm_A++;
+    pwm_B--;
+  } else {
+    pwm_A--;
+    pwm_B++;
+  }
+  analogWrite(PWMA, pwm_A);
+  analogWrite(PWMB, pwm_B);
+
+  prev_A = encoder_A;
+  prev_C = encoder_C;
+
 }
