@@ -37,8 +37,8 @@ long prev_A, prev_C = 0;
 volatile long odometer = 0;
 double velocity_A = 0.0;
 double velocity_B = 0.0;
-short pwm_A = 80; // now correspond to 'C'
-short pwm_B = 86; // now correspond to 'A'
+short pwm_A = 96;  // now correspond to 'C'
+short pwm_B = 100; // now correspond to 'A'
 int cycle = 0;
 volatile int flag = 0;
 int start_flag = -1;
@@ -109,7 +109,9 @@ void loop()
 
 	speedDetect();
 
-	long avg = ((encoder_A + encoder_C) - odometer) / 2;
+	long avg = ((encoder_A + encoder_C) / 2) - odometer;
+	// 注意计算方式
+
 	if (avg > odometer)
 	{
 		digitalWrite(MOTOR_A_NEG, LOW);
