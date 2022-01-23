@@ -4,3 +4,8 @@ The source code of  a reciprocating electronically controlled vehicles using Ard
 <center>
     A guide for wire-plugging
 </center>
+
+## To Do
+
+- fix restarting after finishing the suquence
+- fix velocity adjust function
