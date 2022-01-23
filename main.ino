@@ -116,6 +116,7 @@ void loop()
 	{
 		digitalWrite(MOTOR_A_NEG, LOW);
 		digitalWrite(MOTOR_B_NEG, LOW);
+		flag = 2; //标识一切完成 TODO 已知放在这里会出现speed相关函数无效问题
 	}
 }
 
@@ -132,7 +133,16 @@ void handleNotFound()
 
 void handleupdate_varible()
 {
-	server.send(200, "text/json", "{ \"ena\":" + String(encoder_A) + ", \"enc\":" + String(encoder_C) + ", \"odometer\":" + String(odometer) + '}');
+	server.send(
+		200,
+		"text/json",
+		"{ \"ena\":" + String(encoder_A) +
+			", \"enc\":" + String(encoder_C) +
+			", \"odometer\":" + String(odometer) +
+			", \"pwma\":" + String(pwm_A) +
+			", \"pwmb\":" + String(pwm_B) +
+			'}');
+
 	// 在WebConsole里, enc对应enl(左) ena对于enr(右) 就是反过来的
 }
 
@@ -182,12 +192,14 @@ ICACHE_RAM_ATTR void crashDetect()
 void speedDetect()
 {
 	curr = millis();
-	if (curr - prev >= 1000)
+	if (curr - prev >= 100)
 	{
 
 		// A as left...
-		velocity_A = ((encoder_A - temp_ena) / 3120) * C;
-		velocity_B = ((encoder_C - temp_enc) / 3120) * C;
+		velocity_A = (encoder_A - temp_ena);
+		velocity_B = (encoder_C - temp_enc);
+
+		speedAdjust();
 
 		temp_ena = encoder_A;
 		temp_enc = encoder_C;
@@ -198,25 +210,26 @@ void speedDetect()
 
 void speedAdjust() // for high speed
 {
-	u32 diff_A = encoder_A - prev_A;
-	u32 diff_C = encoder_C - prev_C;
-
-	velocity_A = diff_A / (3120);
-	velocity_B = diff_C / (3210);
-
-	if (velocity_A > velocity_B)
+	if ((velocity_A + velocity_B) / 2 < 110)
 	{
-		pwm_A++;
-		pwm_B--;
+		if (velocity_A > velocity_B)
+		{
+			pwm_B++;
+		}
+		else
+		{
+			pwm_A++;
+		}
 	}
 	else
 	{
-		pwm_A--;
-		pwm_B++;
+		if (velocity_A > velocity_B)
+		{
+			pwm_A--;
+		}
+		else
+		{
+			pwm_B--;
+		}
 	}
-	analogWrite(PWMA, pwm_A);
-	analogWrite(PWMB, pwm_B);
-
-	prev_A = encoder_A;
-	prev_C = encoder_C;
 }
