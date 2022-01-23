@@ -36,9 +36,9 @@
 
         <div class="mdui-row">
 
-            <div class="mdui-p-a-1 mdui-col-xs-7">
+            <div class="mdui-p-a-1 mdui-col-md-6 mdui-col-xs-12 mdui-hidden-sm-down">
                 <div class="mdui-card mdui-m-t-1">
-                    <div class="mdui-p-a-2">
+                    <div class="mdui-p-a-2" style=" position: relative; height: 60vh; width: auto;">
                         <canvas id="velocity-chart"></canvas>
                     </div>
                     <button class="mdui-btn" onclick="addData(chart, 'null', 23, 25)"> test</button>
@@ -69,7 +69,8 @@
                                     }
                                 ],
                                 options: {
-                                    responsive: true
+                                    responsive: true,
+                                    maintainAspectRatio: false
                                 }
                             }
                         });
@@ -97,7 +98,7 @@
                 </div>
             </div>
 
-            <div class="mdui-p-a-1 mdui-col-xs-5">
+            <div class="mdui-p-a-1 mdui-col-md-6 mdui-col-xs-12">
                 <div class="mdui-card mdui-m-t-1">
                     <div class="mdui-card-primary">
                         <div class="mdui-card-primary-title">Varaible Values:</div>
@@ -127,14 +128,12 @@
                         According to current Javascript file, every 500 ms the values above will be updated.
                     </div>
 
-                    <div class="mdui-card-actions">
+                    <div class="mdui-card-actions mdui-card-actions-stacked">
 
                         <button class="mdui-btn mdui-ripple mdui-color-blue-800 mdui-m-t-1" onclick="send(0)">Start
                             Sequence</button>
 
-                        <br>
-
-                        <button class="mdui-btn mdui-ripple mdui-color-grey-400 mdui-m-t-1" onclick="send(1)">Clear
+                        <button class="mdui-btn mdui-ripple mdui-color-grey-400" onclick="send(1)">Clear
                             Encoders and
                             odometer</button>
 
@@ -148,7 +147,7 @@
 
         <div class="mdui-row">
 
-            <div class="mdui-p-a-1 mdui-col-xs-3">
+            <div class="mdui-p-a-1 mdui-col-md-3 mdui-col-xs-4">
                 <div class="mdui-card mdui-m-y-1 mdui-m-r">
                     <div class="mdui-card-primary">
                         <div class="mdui-card-primary-title">Vehicle speed:</div>
@@ -171,7 +170,7 @@
                 </div>
             </div>
 
-            <div class="mdui-p-a-1  mdui-col-xs-9">
+            <div class="mdui-p-a-1  mdui-col-md-9 mdui-col-xs-8">
                 <div class="mdui-card mdui-m-y-1">
                     <div class="mdui-card-primary">
                         <div class="mdui-card-primary-title">PWM Modify:</div>
@@ -179,18 +178,38 @@
                     </div>
 
                     <div class="mdui-card-content">
+                        <div class="mdui-container-fluid">
+                            <div class="mdui-row">
+                                <div class="mdui-col-xs-3">
+                                    <p style="margin-top: 5px;">
+                                        PWM[1] 
+                                        <span id="pwm1" class="badge bg-primary mdui-m-l-1">
+                                            -1
+                                        </span>
+                                    </p>
+                                    <p class="mdui-m-t-0">
+                                        PWM[2]
+                                        <span id="pwm2" class="badge bg-primary mdui-m-l-1">
+                                            -1
+                                        </span>
+                                    </p>
+                                </div>
 
-                        <button class="mdui-btn">PWM1 <span id="pwm1" class="badge bg-primary"
-                                style="font-size: 1em;">-1</span></button>
-                        <button class="mdui-btn">PWM2 <span id="pwm2" class="badge bg-primary"
-                                style="font-size: 1em;">-1</span></button>
-                        <div class="mdui-textfield mdui-textfield-floating-label">
-                            <label class="mdui-textfield-label">PWM1</label>
-                            <input class="mdui-textfield-input" type="plain" />
-                        </div>
-                        <div class="mdui-textfield mdui-textfield-floating-label">
-                            <label class="mdui-textfield-label">PWM2</label>
-                            <input class="mdui-textfield-input" type="plain" />
+                                <div class="mdui-col-7">
+                                    <div style="padding-left: 7rem;">
+                                        <label class="mdui-slider mdui-slider-discrete">
+                                            <input type="range" step="1" min="0" max="255" />
+                                        </label>
+                                    </div>
+
+                                    <div style="padding-left: 7rem; margin-top: 4px;">
+                                        <label class="mdui-slider mdui-slider-discrete">
+                                            <input type="range" step="1" min="0" max="255" />
+                                        </label>
+                                    </div>
+                                </div>
+
+                            </div>
                         </div>
                     </div>
 
@@ -264,7 +283,7 @@
 
                 if (chart_flag) {
                     addData(chart, '', jsonObj.left, jsonObj.right);
-                } 
+                }
 
             }
         };
