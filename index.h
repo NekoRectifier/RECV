@@ -24,9 +24,9 @@ const char webpage[] PROGMEM = R"=====(
             <a href="javascript:;" class="mdui-btn mdui-btn-icon">
                 <i class="mdui-icon material-icons">menu</i>
             </a>
-            <a href="javascript:;" class="mdui-typo-headline">NodeMCU Web Console</a>
+            <p class="mdui-typo-headline">NodeMCU Web Console</p>
             <div class="mdui-toolbar-spacer"></div>
-            <a href="javascript:;" class="mdui-btn mdui-btn-icon">
+            <a href="" class="mdui-btn mdui-btn-icon">
                 <i class="mdui-icon material-icons">refresh</i>
             </a>
 
@@ -37,15 +37,14 @@ const char webpage[] PROGMEM = R"=====(
 
         <div class="mdui-row">
 
-            <div class="mdui-p-a-1 mdui-col-xs-7">
+            <div class="mdui-p-a-1 mdui-col-md-6 mdui-col-xs-12 mdui-hidden-sm-down">
                 <div class="mdui-card mdui-m-t-1">
-                    <div class="mdui-p-a-2">
+                    <div class="mdui-p-a-2" style="height: 52vh;">
                         <canvas id="velocity-chart"></canvas>
                     </div>
-                    <button class="mdui-btn" onclick="addData(chart, 'null', 23, 25)"> test</button>
+                    <!-- <button class="mdui-btn" onclick="addData(chart, 'null', 23, 25)"> test</button> -->
 
                     <script>
-
                         const ctx = document.getElementById('velocity-chart').getContext('2d');
                         var chart = new Chart(ctx, {
 
@@ -70,14 +69,15 @@ const char webpage[] PROGMEM = R"=====(
                                     }
                                 ],
                                 options: {
-                                    responsive: true
+                                    responsive: true,
+                                    maintainAspectRatio: false
                                 }
                             }
                         });
 
                         function addData(chart, label, data1, data2) {
 
-                            if (chart.data.datasets[0].data.length >= 20) {
+                            if (chart.data.datasets[0].data.length >= 16) {
                                 chart.data.datasets[0].data.shift();
                                 chart.data.datasets[1].data.shift();
                                 chart.data.labels.shift();
@@ -86,11 +86,6 @@ const char webpage[] PROGMEM = R"=====(
                             chart.data.datasets[1].data.push(data2);
                             chart.data.labels.push(label);
 
-
-                            // chart.data.labels.push(label);
-                            // chart.data.datasets.forEach(dataset => {
-                            //     dataset.data.push(data);
-                            // });
                             chart.update();
                         }
                     </script>
@@ -98,7 +93,7 @@ const char webpage[] PROGMEM = R"=====(
                 </div>
             </div>
 
-            <div class="mdui-p-a-1 mdui-col-xs-5">
+            <div class="mdui-p-a-1 mdui-col-md-6 mdui-col-xs-12">
                 <div class="mdui-card mdui-m-t-1">
                     <div class="mdui-card-primary">
                         <div class="mdui-card-primary-title">Varaible Values:</div>
@@ -128,14 +123,12 @@ const char webpage[] PROGMEM = R"=====(
                         According to current Javascript file, every 500 ms the values above will be updated.
                     </div>
 
-                    <div class="mdui-card-actions">
+                    <div class="mdui-card-actions ">
 
-                        <button class="mdui-btn mdui-ripple mdui-color-blue-800 mdui-m-t-1" onclick="send(0)">Start
+                        <button class="mdui-btn mdui-ripple mdui-color-blue-800 " onclick="send(0)">Start
                             Sequence</button>
 
-                        <br>
-
-                        <button class="mdui-btn mdui-ripple mdui-color-grey-400 mdui-m-t-1" onclick="send(1)">Clear
+                        <button class="mdui-btn mdui-ripple mdui-color-grey-400" onclick="send(1)">Clear
                             Encoders and
                             odometer</button>
 
@@ -149,7 +142,7 @@ const char webpage[] PROGMEM = R"=====(
 
         <div class="mdui-row">
 
-            <div class="mdui-p-a-1 mdui-col-xs-3">
+            <div class="mdui-p-a-1 mdui-col-md-3 mdui-col-xs-12">
                 <div class="mdui-card mdui-m-y-1 mdui-m-r">
                     <div class="mdui-card-primary">
                         <div class="mdui-card-primary-title">Vehicle speed:</div>
@@ -172,7 +165,7 @@ const char webpage[] PROGMEM = R"=====(
                 </div>
             </div>
 
-            <div class="mdui-p-a-1  mdui-col-xs-9">
+            <div class="mdui-p-a-1  mdui-col-md-9 mdui-col-xs-12">
                 <div class="mdui-card mdui-m-y-1">
                     <div class="mdui-card-primary">
                         <div class="mdui-card-primary-title">PWM Modify:</div>
@@ -180,33 +173,76 @@ const char webpage[] PROGMEM = R"=====(
                     </div>
 
                     <div class="mdui-card-content">
+                        <div class="mdui-container-fluid">
+                            <div class="mdui-row">
+                                <div class="mdui-col-xs-3">
+                                    <p style="margin-top: 5px;">
+                                        PWM[1]
+                                        <span id="pwm1" class="badge bg-primary mdui-m-l-1">
+                                            -1
+                                        </span>
+                                    </p>
+                                    <p class="mdui-m-t-0">
+                                        PWM[2]
+                                        <span id="pwm2" class="badge bg-primary mdui-m-l-1">
+                                            -1
+                                        </span>
+                                    </p>
+                                </div>
 
-                        <button class="mdui-btn">PWM1 <span id="pwm1" class="badge bg-primary"
-                                style="font-size: 1em;">-1</span></button>
-                        <button class="mdui-btn">PWM2 <span id="pwm2" class="badge bg-primary"
-                                style="font-size: 1em;">-1</span></button>
-                        <div class="mdui-textfield mdui-textfield-floating-label">
-                            <label class="mdui-textfield-label">PWM1</label>
-                            <input class="mdui-textfield-input" type="plain" />
-                        </div>
-                        <div class="mdui-textfield mdui-textfield-floating-label">
-                            <label class="mdui-textfield-label">PWM2</label>
-                            <input class="mdui-textfield-input" type="plain" />
-                        </div>
-                    </div>
+                                <div class="mdui-col-7">
+                                    <div style="padding-left: 7rem;">
+                                        <label class="mdui-slider mdui-slider-discrete">
+                                            <input id="pwm_slider_a" type="range" step="1" min="0" max="255" />
+                                        </label>
+                                    </div>
 
-                    <div class="mdui-card-actions">
-                        <button class="mdui-btn mdui-ripple mdui-color-green-800" onclick="send(4)">Proceed</button>
+                                    <div style="padding-left: 7rem; margin-top: 4px;">
+                                        <label class="mdui-slider mdui-slider-discrete">
+                                            <input id="pwm_slider_b" type="range" step="1" min="0" max="255" />
+                                        </label>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
     </div>
+
+    <!-- <button class="mdui-fab mdui-fab-fixed mdui-ripple mdui-color-blue-700">
+        <i class="mdui-icon material-icons">add</i>
+    </button> -->
+
+    <div class="mdui-fab-wrapper" mdui-fab="{trigger: 'hover'}">
+        <button class="mdui-fab mdui-ripple mdui-color-blue-700">
+            <!-- 默认显示的图标 -->
+            <i class="mdui-icon material-icons">add</i>
+
+            <!-- 在拨号菜单开始打开时，平滑切换到该图标，若不需要切换图标，则可以省略该元素 -->
+            <i class="mdui-icon mdui-fab-opened material-icons">person</i>
+        </button>
+        <div class="mdui-fab-dial">
+            <button class="mdui-fab mdui-fab-mini mdui-ripple mdui-color-pink">
+                <i class="mdui-icon material-icons">more</i>
+            </button>
+            <button class="mdui-fab mdui-fab-mini mdui-ripple mdui-color-red">
+                <i class="mdui-icon material-icons">bookmark</i>
+            </button>
+            <button class="mdui-fab mdui-fab-mini mdui-ripple mdui-color-orange">
+                <i class="mdui-icon material-icons">access_alarms</i>
+            </button>
+            <button class="mdui-fab mdui-fab-mini mdui-ripple mdui-color-blue">
+                <i class="mdui-icon material-icons">touch_app</i>
+            </button>
+        </div>
+    </div>
+    
 </body>
 
-
-</body>
 
 <script>
 
@@ -249,6 +285,9 @@ const char webpage[] PROGMEM = R"=====(
                 // for pwms
                 document.getElementById("pwm1").innerHTML = jsonObj.pwma;
                 document.getElementById("pwm2").innerHTML = jsonObj.pwmb;
+
+                document.getElementById("pwm_slider_a").value = jsonObj.pwma;
+                document.getElementById("pwm_slider_b").value = jsonObj.pwmb;
             }
         };
         xhttp.open("GET", "update_varible", true);
@@ -265,7 +304,7 @@ const char webpage[] PROGMEM = R"=====(
 
                 if (chart_flag) {
                     addData(chart, '', jsonObj.left, jsonObj.right);
-                } 
+                }
 
             }
         };

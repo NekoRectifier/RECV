@@ -28,6 +28,8 @@
 #define TOTAL_PULSE_WHELL 1560
 #define C 20.7345
 
+#define amendment 2000
+
 volatile long encoder_A = 0;
 volatile long encoder_C = 0;
 
@@ -37,7 +39,7 @@ long prev_A, prev_C = 0;
 volatile long odometer = 0;
 double velocity_A = 0.0;
 double velocity_B = 0.0;
-short pwm_A = 96;  // now correspond to 'C'
+short pwm_A = 100;  // now correspond to 'C'
 short pwm_B = 100; // now correspond to 'A'
 int cycle = 0;
 volatile int flag = 0;
@@ -109,7 +111,7 @@ void loop()
 
 	speedDetect();
 
-	long avg = ((encoder_A + encoder_C) / 2) - odometer;
+	long avg = ((encoder_A + encoder_C) / 2) - odometer + amendment;
 	// 注意计算方式
 
 	if (avg > odometer)
@@ -192,7 +194,7 @@ ICACHE_RAM_ATTR void crashDetect()
 void speedDetect()
 {
 	curr = millis();
-	if (curr - prev >= 100)
+	if (curr - prev >= 50)
 	{
 
 		// A as left...
@@ -208,28 +210,30 @@ void speedDetect()
 	// 取得的转速单位为 转/秒
 }
 
-void speedAdjust() // for high speed
+void speedAdjust() // for high speed 看起来pwm和v是反的...
 {
-	if ((velocity_A + velocity_B) / 2 < 110)
+	if ((velocity_A + velocity_B) / 2 < 250)
 	{
 		if (velocity_A > velocity_B)
 		{
-			pwm_B++;
+			pwm_A++;
 		}
 		else
 		{
-			pwm_A++;
+			pwm_B++;
 		}
 	}
 	else
 	{
 		if (velocity_A > velocity_B)
 		{
-			pwm_A--;
+			pwm_B--;
 		}
 		else
 		{
-			pwm_B--;
+			pwm_A--;
 		}
 	}
+	analogWrite(PWMA, pwm_A);
+	analogWrite(PWMB, pwm_B);
 }
