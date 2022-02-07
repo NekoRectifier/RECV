@@ -77,11 +77,14 @@ const char webpage[] PROGMEM = R"=====(
 
                         function addData(chart, label, data1, data2) {
 
-                            if (chart.data.datasets[0].data.length >= 16) {
-                                chart.data.datasets[0].data.shift();
-                                chart.data.datasets[1].data.shift();
-                                chart.data.labels.shift();
-                            }
+                            // if (chart.data.datasets[0].data.length >= 16) {
+                            //     chart.data.datasets[0].data.shift();
+                            //     chart.data.datasets[1].data.shift();
+                            //     chart.data.labels.shift();
+                            // }
+                            
+                            // 用于删除之前数据
+
                             chart.data.datasets[0].data.push(data1);
                             chart.data.datasets[1].data.push(data2);
                             chart.data.labels.push(label);
@@ -125,12 +128,17 @@ const char webpage[] PROGMEM = R"=====(
 
                     <div class="mdui-card-actions ">
 
-                        <button class="mdui-btn mdui-ripple mdui-color-blue-800 " onclick="send(0)">Start
-                            Sequence</button>
+                        <button class="mdui-btn mdui-ripple mdui-color-blue-800 " onclick="send(0)">
+                            Start Sequence
+                        </button>
 
-                        <button class="mdui-btn mdui-ripple mdui-color-grey-400" onclick="send(1)">Clear
-                            Encoders and
-                            odometer</button>
+                        <button class="mdui-btn mdui-ripple mdui-color-orange-400" onclick="send(2)">
+                            Stop Chart Update
+                        </button>
+
+                        <button class="mdui-btn mdui-ripple mdui-color-grey-400" onclick="send(1)">
+                            Clear Encoders / Odometer
+                        </button>
 
                         <!-- <button class="mdui-btn mdui-ripple mdui-color-red-500" onclick="send(2)">Restart</button> -->
                     </div>
@@ -252,6 +260,8 @@ const char webpage[] PROGMEM = R"=====(
 
         if (para == 0) {
             chart_flag = true;
+        } else if(para == 2) {
+            chart_flag = false;
         }
 
         var xhttp = new XMLHttpRequest();
@@ -266,7 +276,7 @@ const char webpage[] PROGMEM = R"=====(
 
     setInterval(function () {
         getData();
-    }, 500);
+    }, 400);
 
     function getData() {
 
@@ -301,7 +311,6 @@ const char webpage[] PROGMEM = R"=====(
                 const jsonObj = JSON.parse(json);
                 document.getElementById("left_spd").innerHTML = jsonObj.left;
                 document.getElementById("right_spd").innerHTML = jsonObj.right;
-
                 if (chart_flag) {
                     addData(chart, '', jsonObj.left, jsonObj.right);
                 }

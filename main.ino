@@ -28,7 +28,7 @@
 #define TOTAL_PULSE_WHELL 1560
 #define C 20.7345
 
-#define amendment 2000
+#define amendment 1000
 
 volatile long encoder_A = 0;
 volatile long encoder_C = 0;
@@ -111,26 +111,27 @@ void loop()
 
 	speedDetect();
 
-	long avg = ((encoder_A + encoder_C) / 2) - odometer + amendment;
-	// 注意计算方式
+	long avg = (
+		(encoder_A + encoder_C) / 2)
+		- odometer + amendment;							 // 注意计算方式
 
 	if (avg > odometer)
 	{
 		digitalWrite(MOTOR_A_NEG, LOW);
 		digitalWrite(MOTOR_B_NEG, LOW);
-		flag = 2; //标识一切完成 TODO 已知放在这里会出现speed相关函数无效问题
+		flag = 2; 										 //标识一切完成 TODO 已知放在这里会出现speed相关函数无效问题
 	}
 }
 
 void handleRoot()
-{ //处理网站根目录“/”的访问请求
+{ 														 //处理网站根目录“/”的访问请求
 	String html = webpage;
-	server.send(200, "text/html", html); // NodeMCU将调用此函数。
+	server.send(200, "text/html", html); 			   	 // NodeMCU将调用此函数。
 }
 
 void handleNotFound()
-{													  // 当浏览器请求的网络资源无法在服务器找到时，
-	server.send(404, "text/plain", "404: Not found"); // NodeMCU将调用此函数。
+{													 	 // 当浏览器请求的网络资源无法在服务器找到时，
+	server.send(404, "text/plain", "404: Not found");	 // NodeMCU将调用此函数。
 }
 
 void handleupdate_varible()
@@ -194,9 +195,8 @@ ICACHE_RAM_ATTR void crashDetect()
 void speedDetect()
 {
 	curr = millis();
-	if (curr - prev >= 50)
+	if (curr - prev >= 50) // 检测时间阈值
 	{
-
 		// A as left...
 		velocity_A = (encoder_A - temp_ena);
 		velocity_B = (encoder_C - temp_enc);
@@ -207,12 +207,11 @@ void speedDetect()
 		temp_enc = encoder_C;
 		prev = millis();
 	}
-	// 取得的转速单位为 转/秒
 }
 
 void speedAdjust() // for high speed 看起来pwm和v是反的...
 {
-	if ((velocity_A + velocity_B) / 2 < 250)
+	if ((velocity_A + velocity_B) / 2 < 320) // 最小速度阈值
 	{
 		if (velocity_A > velocity_B)
 		{
