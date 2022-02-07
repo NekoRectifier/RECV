@@ -201,7 +201,7 @@ void speedDetect()
 		velocity_A = (encoder_A - temp_ena);
 		velocity_B = (encoder_C - temp_enc);
 
-		speedAdjust();
+		//speedAdjust();
 
 		temp_ena = encoder_A;
 		temp_enc = encoder_C;
@@ -211,7 +211,7 @@ void speedDetect()
 
 void speedAdjust() // for high speed 看起来pwm和v是反的...
 {
-	if ((velocity_A + velocity_B) / 2 < 320) // 最小速度阈值
+	if ((velocity_A + velocity_B) / 2 < 230) // 最小速度阈值
 	{
 		if (velocity_A > velocity_B)
 		{
