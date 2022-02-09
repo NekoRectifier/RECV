@@ -39,9 +39,10 @@ long prev_A, prev_C = 0;
 volatile long odometer = 0;
 double velocity_A = 0.0;
 double velocity_B = 0.0;
-short pwm_A = 100;  // now correspond to 'C'
-short pwm_B = 100; // now correspond to 'A'
-int cycle = 0;
+short pwm_A = 120; // now correspond to 'C'
+short pwm_B = 120; // now correspond to 'A'
+
+// flags here
 volatile int flag = 0;
 int start_flag = -1;
 
@@ -55,7 +56,6 @@ ESP8266WebServer server(80);
 void setup()
 {
 	// Serial.begin(115200);
-
 	// delay(3000);
 
 	pinMode(MOTOR_A_POS, OUTPUT);
@@ -67,9 +67,7 @@ void setup()
 	pinMode(LED_BUILTIN, OUTPUT);
 
 	pinMode(ENCODER_A, INPUT);
-	// pinMode(ENCODER_B, INPUT);
 	pinMode(ENCODER_C, INPUT);
-	// pinMode(ENCODER_D, INPUT);
 	pinMode(CRASH_BTN, INPUT);
 
 	analogWrite(PWMA, pwm_A); //给定pwm模拟输出
@@ -90,7 +88,7 @@ void setup()
 	while (start_flag == -1)
 	{
 		server.handleClient();
-		delay(50);
+		delay(10);
 	}
 
 	attachInterrupt(digitalPinToInterrupt(ENCODER_A), ISR_enc_A, CHANGE);
@@ -111,27 +109,26 @@ void loop()
 
 	speedDetect();
 
-	long avg = (
-		(encoder_A + encoder_C) / 2)
-		- odometer + amendment;							 // 注意计算方式
+	long avg = ((encoder_A + encoder_C) / 2) - odometer + amendment; // 注意计算方式
 
-	if (avg > odometer)
+	if (avg > odometer && odometer != 0) // "&& odometer != 0" 极其重要
 	{
 		digitalWrite(MOTOR_A_NEG, LOW);
 		digitalWrite(MOTOR_B_NEG, LOW);
-		flag = 2; 										 //标识一切完成 TODO 已知放在这里会出现speed相关函数无效问题
+		flag = 2; //标识一切完成 
+		// TODO 已知放在这里会出现speed相关函数无效问题
 	}
 }
 
 void handleRoot()
-{ 														 //处理网站根目录“/”的访问请求
+{
 	String html = webpage;
-	server.send(200, "text/html", html); 			   	 // NodeMCU将调用此函数。
+	server.send(200, "text/html", html);
 }
 
 void handleNotFound()
-{													 	 // 当浏览器请求的网络资源无法在服务器找到时，
-	server.send(404, "text/plain", "404: Not found");	 // NodeMCU将调用此函数。
+{													  // 当浏览器请求的网络资源无法在服务器找到时，
+	server.send(404, "text/plain", "404: Not found"); // NodeMCU将调用此函数。
 }
 
 void handleupdate_varible()
@@ -188,6 +185,7 @@ ICACHE_RAM_ATTR void crashDetect()
 	digitalWrite(MOTOR_B_NEG, HIGH);
 
 	digitalWrite(LED_BUILTIN, HIGH);
+
 	flag = 1;
 	odometer = (encoder_A + encoder_C) / 2;
 }
@@ -201,7 +199,7 @@ void speedDetect()
 		velocity_A = (encoder_A - temp_ena);
 		velocity_B = (encoder_C - temp_enc);
 
-		//speedAdjust();
+		speedAdjust();
 
 		temp_ena = encoder_A;
 		temp_enc = encoder_C;
@@ -209,30 +207,33 @@ void speedDetect()
 	}
 }
 
-void speedAdjust() // for high speed 看起来pwm和v是反的...
+void speedAdjust()
 {
-	if ((velocity_A + velocity_B) / 2 < 230) // 最小速度阈值
+	// encoders 是正的 pwm是反的
+
+	if (flag == 0)
 	{
-		if (velocity_A > velocity_B)
+		// 正转时
+		if (encoder_A < encoder_C)
 		{
-			pwm_A++;
+			pwm_A = 90;
+			pwm_B = 145;
 		}
 		else
 		{
-			pwm_B++;
+			pwm_B = 90;
+			pwm_A = 145;
 		}
 	}
-	else
+	else if(flag == 1)
 	{
-		if (velocity_A > velocity_B)
-		{
-			pwm_B--;
-		}
-		else
-		{
-			pwm_A--;
-		}
+		// 反转时
+		
+	} else {
+		// only for debug
+		pwm_A = flag;
+		pwm_B = flag;
 	}
 	analogWrite(PWMA, pwm_A);
-	analogWrite(PWMB, pwm_B);
+	analogWrite(PWMB, pwm_B - 30);
 }
