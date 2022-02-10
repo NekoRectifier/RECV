@@ -6,7 +6,7 @@
 
   <h1 align="center">英国机械工程师学会项目往复式小车源码</h1>
 <p align="center">
-The source code of a reciprocating electronically controlled vehicles using Arduino uno for IMechE Test.
+The source code of a reciprocating electronically controlled vehicles using NodeMCU for IMechE Test.
 </p>
 
 <br>
