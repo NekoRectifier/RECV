@@ -15,9 +15,7 @@
 #define MOTOR_B_NEG D8
 // 不要改动! GPIO16 不能正常输出
 #define ENCODER_A D1
-//#define ENCODER_B D1
 #define ENCODER_C D2
-//#define ENCODER_D D3
 #define CRASH_BTN D7
 
 //占空比电压调制
@@ -25,10 +23,10 @@
 #define PWMB D6
 //针脚定义结束
 
-#define TOTAL_PULSE_WHELL 1560
+#define TOTAL_PULSE_WHEEL 1560
 #define C 20.7345
 
-#define amendment 1000
+#define amendment 1600
 
 volatile long encoder_A = 0;
 volatile long encoder_C = 0;
@@ -43,8 +41,8 @@ short pwm_A = 120; // now correspond to 'C'
 short pwm_B = 120; // now correspond to 'A'
 
 // flags here
-volatile int flag = 0;
-int start_flag = -1;
+volatile byte flag = 0;
+bool start_flag = false;
 
 unsigned long curr, prev = 0;
 
@@ -70,9 +68,6 @@ void setup()
 	pinMode(ENCODER_C, INPUT);
 	pinMode(CRASH_BTN, INPUT);
 
-	analogWrite(PWMA, pwm_A); //给定pwm模拟输出
-	analogWrite(PWMB, pwm_B);
-
 	wifi.addAP("HYX_WLAN", "86309602");
 	while (wifi.run() != WL_CONNECTED)
 	{
@@ -85,10 +80,9 @@ void setup()
 	server.on("/act", handleact);
 	server.begin();
 
-	while (start_flag == -1)
+	while (!start_flag)
 	{
 		server.handleClient();
-		delay(10);
 	}
 
 	attachInterrupt(digitalPinToInterrupt(ENCODER_A), ISR_enc_A, CHANGE);
@@ -99,6 +93,9 @@ void setup()
 	digitalWrite(MOTOR_A_NEG, LOW);
 	digitalWrite(MOTOR_B_POS, HIGH);
 	digitalWrite(MOTOR_B_NEG, LOW);
+
+	analogWrite(PWMA, pwm_A);
+	analogWrite(PWMB, pwm_B);
 
 	curr = prev = millis();
 }
@@ -115,8 +112,7 @@ void loop()
 	{
 		digitalWrite(MOTOR_A_NEG, LOW);
 		digitalWrite(MOTOR_B_NEG, LOW);
-		flag = 2; //标识一切完成 
-		// TODO 已知放在这里会出现speed相关函数无效问题
+		flag = 2; //标识一切完成
 	}
 }
 
@@ -151,7 +147,7 @@ void handleact()
 	String argument = server.arg("selector");
 	if (argument == "0")
 	{
-		start_flag = 0;
+		start_flag = true;
 		server.send(200, "text/plain", "ok");
 	}
 	else if (argument == "1")
@@ -193,7 +189,7 @@ ICACHE_RAM_ATTR void crashDetect()
 void speedDetect()
 {
 	curr = millis();
-	if (curr - prev >= 50) // 检测时间阈值
+	if (curr - prev >= 30) // 检测时间阈值
 	{
 		// A as left...
 		velocity_A = (encoder_A - temp_ena);
@@ -210,30 +206,42 @@ void speedDetect()
 void speedAdjust()
 {
 	// encoders 是正的 pwm是反的
-
+	// PWM:A -> 右轮, PWM:B -> 左轮;
 	if (flag == 0)
 	{
 		// 正转时
 		if (encoder_A < encoder_C)
 		{
 			pwm_A = 90;
-			pwm_B = 145;
+			pwm_B = 130;
 		}
 		else
 		{
 			pwm_B = 90;
-			pwm_A = 145;
+			pwm_A = 130;
 		}
 	}
-	else if(flag == 1)
+	else if (flag == 1)
 	{
-		// 反转时
-		
-	} else {
-		// only for debug
-		pwm_A = flag;
-		pwm_B = flag;
+		// 行进方向的右侧偏移
+
+		if (encoder_A < encoder_C)
+		{
+			pwm_A = 90;
+			pwm_B = 130;
+		}
+		else
+		{
+			pwm_B = 90;
+			pwm_A = 130;
+		}
+	}
+	else
+	{
+		// only for debug 结束时
+		pwm_A = 0;
+		pwm_B = 0;
 	}
 	analogWrite(PWMA, pwm_A);
-	analogWrite(PWMB, pwm_B - 30);
+	analogWrite(PWMB, pwm_B);
 }
