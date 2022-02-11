@@ -25,6 +25,7 @@
 
 #define TOTAL_PULSE_WHEEL 1560
 #define C 20.7345
+#define DECELERATION_THRESOLD 29342
 
 #define amendment 1600
 
@@ -43,6 +44,7 @@ short pwm_B = 120; // now correspond to 'A'
 // flags here
 volatile byte flag = 0;
 bool start_flag = false;
+bool pre_deceleration = false;
 
 unsigned long curr, prev = 0;
 
@@ -105,6 +107,8 @@ void loop()
 	server.handleClient();
 
 	speedDetect();
+
+	if (!pre_deceleration) crashPreProcess();
 
 	long avg = ((encoder_A + encoder_C) / 2) - odometer + amendment; // 注意计算方式
 
@@ -181,6 +185,7 @@ ICACHE_RAM_ATTR void crashDetect()
 	digitalWrite(MOTOR_B_NEG, HIGH);
 
 	digitalWrite(LED_BUILTIN, HIGH);
+	digitalWrite(4, LOW);
 
 	flag = 1;
 	odometer = (encoder_A + encoder_C) / 2;
@@ -189,13 +194,14 @@ ICACHE_RAM_ATTR void crashDetect()
 void speedDetect()
 {
 	curr = millis();
-	if (curr - prev >= 30) // 检测时间阈值
+	if (curr - prev >= 40) // 检测时间阈值
 	{
 		// A as left...
 		velocity_A = (encoder_A - temp_ena);
 		velocity_B = (encoder_C - temp_enc);
 
-		speedAdjust();
+		if (!(pre_deceleration && flag == 0)) speedAdjust();
+		// 指定在预减速完成后的区间内不进行速度调整
 
 		temp_ena = encoder_A;
 		temp_enc = encoder_C;
@@ -228,12 +234,12 @@ void speedAdjust()
 		if (encoder_A < encoder_C)
 		{
 			pwm_A = 90;
-			pwm_B = 130;
+			pwm_B = 150;
 		}
 		else
 		{
 			pwm_B = 90;
-			pwm_A = 130;
+			pwm_A = 150;
 		}
 	}
 	else
@@ -244,4 +250,21 @@ void speedAdjust()
 	}
 	analogWrite(PWMA, pwm_A);
 	analogWrite(PWMB, pwm_B);
+}
+
+void crashPreProcess()
+{
+	// slow down the vehicle to prevent the vehicle from crashing
+	
+	if (encoder_A >= DECELERATION_THRESOLD || encoder_C >= DECELERATION_THRESOLD)
+	{
+		for (int i = 0;i < 9; i++) {
+			int subtractor = 5*i;
+			analogWrite(PWMA, 120 - subtractor);
+			analogWrite(PWMB, 120 - subtractor);
+			delay(400);
+		}
+		pre_deceleration = true;
+	}
+
 }

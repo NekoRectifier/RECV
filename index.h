@@ -77,17 +77,17 @@ const char webpage[] PROGMEM = R"=====(
 
                         function addData(chart, label, data1, data2) {
 
-                            // if (chart.data.datasets[0].data.length >= 16) {
-                            //     chart.data.datasets[0].data.shift();
-                            //     chart.data.datasets[1].data.shift();
-                            //     chart.data.labels.shift();
-                            // }
+                            if (chart.data.datasets[0].data.length >= 25) {
+                                chart.data.datasets[0].data.shift();
+                                chart.data.datasets[1].data.shift();
+                                chart.data.labels.shift();
+                            }
                             
                             // 用于删除之前数据
 
-                            chart.data.datasets[0].data.push(data1);
-                            chart.data.datasets[1].data.push(data2);
-                            chart.data.labels.push(label);
+                            // chart.data.datasets[0].data.push(data1);
+                            // chart.data.datasets[1].data.push(data2);
+                            // chart.data.labels.push(label);
 
                             chart.update();
                         }
@@ -276,7 +276,7 @@ const char webpage[] PROGMEM = R"=====(
 
     setInterval(function () {
         getData();
-    }, 350);
+    }, 400);
 
     function getData() {
 
