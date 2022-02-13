@@ -8,7 +8,6 @@
 //#define MOTOR_B_NEG D8
 // (始终可用情况)
 
-// 针脚定义 开始
 #define MOTOR_A_POS 3
 #define MOTOR_A_NEG D3
 #define MOTOR_B_POS 1
@@ -18,16 +17,15 @@
 #define ENCODER_C D2
 #define CRASH_BTN D7
 
-//占空比电压调制
 #define PWMA D5
 #define PWMB D6
-//针脚定义结束
 
 #define TOTAL_PULSE_WHEEL 1560
 #define C 20.7345
-#define DECELERATION_THRESOLD 29342
+#define DECELERATION_THRESOLD 29718 // 395cm
+// 不同车道需切换
 
-#define amendment 1600
+#define amendment 1200
 
 volatile long encoder_A = 0;
 volatile long encoder_C = 0;
@@ -96,10 +94,7 @@ void setup()
 	digitalWrite(MOTOR_B_POS, HIGH);
 	digitalWrite(MOTOR_B_NEG, LOW);
 
-	analogWrite(PWMA, pwm_A);
-	analogWrite(PWMB, pwm_B);
-
-	curr = prev = millis();
+	startUpProcess();
 }
 
 void loop()
@@ -108,11 +103,11 @@ void loop()
 
 	speedDetect();
 
-	if (!pre_deceleration) crashPreProcess();
+	// if (!pre_deceleration) crashPreProcess();
 
-	long avg = ((encoder_A + encoder_C) / 2) - odometer + amendment; // 注意计算方式
+	long avg = ((encoder_A + encoder_C) / 2) - odometer + amendment;
 
-	if (avg > odometer && odometer != 0) // "&& odometer != 0" 极其重要
+	if (avg > odometer && odometer != 0)
 	{
 		digitalWrite(MOTOR_A_NEG, LOW);
 		digitalWrite(MOTOR_B_NEG, LOW);
@@ -139,8 +134,6 @@ void handleupdate_varible()
 		"{ \"ena\":" + String(encoder_A) +
 			", \"enc\":" + String(encoder_C) +
 			", \"odometer\":" + String(odometer) +
-			", \"pwma\":" + String(pwm_A) +
-			", \"pwmb\":" + String(pwm_B) +
 			'}');
 
 	// 在WebConsole里, enc对应enl(左) ena对于enr(右) 就是反过来的
@@ -215,31 +208,31 @@ void speedAdjust()
 	// PWM:A -> 右轮, PWM:B -> 左轮;
 	if (flag == 0)
 	{
-		// 正转时
+		// 正转时 行进向稍右偏
 		if (encoder_A < encoder_C)
 		{
 			pwm_A = 90;
-			pwm_B = 130;
+			pwm_B = 103;
 		}
 		else
 		{
 			pwm_B = 90;
-			pwm_A = 130;
+			pwm_A = 120;
 		}
 	}
 	else if (flag == 1)
 	{
-		// 行进方向的右侧偏移
+		// 行进方向的弧形左侧偏移
 
 		if (encoder_A < encoder_C)
 		{
 			pwm_A = 90;
-			pwm_B = 150;
+			pwm_B = 131;
 		}
 		else
 		{
 			pwm_B = 90;
-			pwm_A = 150;
+			pwm_A = 120;
 		}
 	}
 	else
@@ -262,9 +255,21 @@ void crashPreProcess()
 			int subtractor = 5*i;
 			analogWrite(PWMA, 120 - subtractor);
 			analogWrite(PWMB, 120 - subtractor);
-			delay(400);
+			delay(100);
 		}
 		pre_deceleration = true;
 	}
 
+}
+
+void startUpProcess()
+{
+	for (int i = 0;i < 20; i++) {
+		int additor = 2*i;
+		analogWrite(PWMA, 60 + additor);
+		analogWrite(PWMB, 60 + additor);
+		delay(4);
+	}
+
+	curr = prev = millis();
 }
