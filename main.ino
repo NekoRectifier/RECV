@@ -25,7 +25,7 @@
 #define DECELERATION_THRESOLD 29718 // 395cm
 // 不同车道需切换
 
-#define amendment 1200
+#define amendment 1000
 
 volatile long encoder_A = 0;
 volatile long encoder_C = 0;
@@ -103,7 +103,7 @@ void loop()
 
 	speedDetect();
 
-	// if (!pre_deceleration) crashPreProcess();
+	if (!pre_deceleration) crashPreProcess();
 
 	long avg = ((encoder_A + encoder_C) / 2) - odometer + amendment;
 
@@ -208,7 +208,7 @@ void speedAdjust()
 	// PWM:A -> 右轮, PWM:B -> 左轮;
 	if (flag == 0)
 	{
-		// 正转时 行进向稍右偏
+		// 正转时
 		if (encoder_A < encoder_C)
 		{
 			pwm_A = 90;
@@ -217,7 +217,7 @@ void speedAdjust()
 		else
 		{
 			pwm_B = 90;
-			pwm_A = 120;
+			pwm_A = 124;
 		}
 	}
 	else if (flag == 1)
@@ -227,7 +227,7 @@ void speedAdjust()
 		if (encoder_A < encoder_C)
 		{
 			pwm_A = 90;
-			pwm_B = 131;
+			pwm_B = 129;
 		}
 		else
 		{
