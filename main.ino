@@ -74,7 +74,6 @@ void setup()
 		delay(150);
 	}
 	server.on("/", handleRoot);
-	server.onNotFound(handleNotFound);
 	server.on("/update_varible", handleupdate_varible);
 	server.on("/update_speed", handleupdate_speed);
 	server.on("/act", handleact);
@@ -103,7 +102,7 @@ void loop()
 
 	speedDetect();
 
-	if (!pre_deceleration) crashPreProcess();
+	// if (!pre_deceleration) crashPreProcess();
 
 	long avg = ((encoder_A + encoder_C) / 2) - odometer + amendment;
 
@@ -119,11 +118,6 @@ void handleRoot()
 {
 	String html = webpage;
 	server.send(200, "text/html", html);
-}
-
-void handleNotFound()
-{													  // 当浏览器请求的网络资源无法在服务器找到时，
-	server.send(404, "text/plain", "404: Not found"); // NodeMCU将调用此函数。
 }
 
 void handleupdate_varible()
@@ -227,7 +221,7 @@ void speedAdjust()
 		if (encoder_A < encoder_C)
 		{
 			pwm_A = 90;
-			pwm_B = 129;
+			pwm_B = 126;
 		}
 		else
 		{
@@ -268,7 +262,8 @@ void startUpProcess()
 		int additor = 2*i;
 		analogWrite(PWMA, 60 + additor);
 		analogWrite(PWMB, 60 + additor);
-		delay(4);
+		delay(8);
+		// 看起来是延迟大一点好一些
 	}
 
 	curr = prev = millis();
