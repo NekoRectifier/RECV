@@ -36,8 +36,8 @@ long prev_A, prev_C = 0;
 volatile long odometer = 0;
 double velocity_A = 0.0;
 double velocity_B = 0.0;
-short pwm_A = 120; // now correspond to 'C'
-short pwm_B = 120; // now correspond to 'A'
+short pwm_A = 125; // now correspond to 'C'
+short pwm_B = 125; // now correspond to 'A'
 
 // flags here
 volatile byte flag = 0;
@@ -265,6 +265,9 @@ void startUpProcess()
 		delay(8);
 		// 看起来是延迟大一点好一些
 	}
+
+	analogWrite(PWMA, pwm_A);
+	analogWrite(PWMB, pwm_B);
 
 	curr = prev = millis();
 }
