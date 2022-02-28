@@ -36,8 +36,8 @@ long prev_A, prev_C = 0;
 volatile long odometer = 0;
 double velocity_A = 0.0;
 double velocity_B = 0.0;
-short pwm_A = 125; // now correspond to 'C'
-short pwm_B = 125; // now correspond to 'A'
+short pwm_A = 120; // now correspond to 'C'
+short pwm_B = 120; // now correspond to 'A'
 
 // flags here
 volatile byte flag = 0;
@@ -68,10 +68,10 @@ void setup()
 	pinMode(ENCODER_C, INPUT);
 	pinMode(CRASH_BTN, INPUT);
 
-	wifi.addAP("HYX_WLAN", "86309602");
+	wifi.addAP("叁壹零", "sanyiling");
 	while (wifi.run() != WL_CONNECTED)
 	{
-		delay(150);
+		delay(50);
 	}
 	server.on("/", handleRoot);
 	server.on("/update_varible", handleupdate_varible);
@@ -260,8 +260,8 @@ void startUpProcess()
 {
 	for (int i = 0;i < 20; i++) {
 		int additor = 2*i;
-		analogWrite(PWMA, 60 + additor);
-		analogWrite(PWMB, 60 + additor);
+		analogWrite(PWMA, 80 + additor);
+		analogWrite(PWMB, 80 + additor);
 		delay(8);
 		// 看起来是延迟大一点好一些
 	}
