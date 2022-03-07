@@ -53,220 +53,221 @@ ESP8266WebServer server(80);
 
 void setup()
 {
-  // Serial.begin(115200);
-  // delay(3000);
+	// Serial.begin(115200);
+	// delay(3000);
 
-  pinMode(MOTOR_A_POS, OUTPUT);
-  pinMode(MOTOR_A_NEG, OUTPUT);
-  pinMode(PWMA, OUTPUT);
-  pinMode(MOTOR_B_POS, OUTPUT);
-  pinMode(MOTOR_B_NEG, OUTPUT);
-  pinMode(PWMB, OUTPUT);
-  pinMode(LED_BUILTIN, OUTPUT);
+	pinMode(MOTOR_A_POS, OUTPUT);
+	pinMode(MOTOR_A_NEG, OUTPUT);
+	pinMode(PWMA, OUTPUT);
+	pinMode(MOTOR_B_POS, OUTPUT);
+	pinMode(MOTOR_B_NEG, OUTPUT);
+	pinMode(PWMB, OUTPUT);
+	pinMode(LED_BUILTIN, OUTPUT);
 
-  pinMode(ENCODER_A, INPUT);
-  pinMode(ENCODER_C, INPUT);
-  pinMode(CRASH_BTN, INPUT);
+	pinMode(ENCODER_A, INPUT);
+	pinMode(ENCODER_C, INPUT);
+	pinMode(CRASH_BTN, INPUT);
 
-  wifi.addAP("叁壹零", "sanyiling");
-  while (wifi.run() != WL_CONNECTED)
-  {
-    delay(50);
-  }
-  server.on("/", handleRoot);
-  server.on("/update_varible", handleupdate_varible);
-  server.on("/update_speed", handleupdate_speed);
-  server.on("/act", handleact);
-  server.begin();
+	wifi.addAP("叁壹零", "sanyiling");
+	while (wifi.run() != WL_CONNECTED)
+	{
+		delay(50);
+	}
+	server.on("/", handleRoot);
+	server.on("/update_varible", handleupdate_varible);
+	server.on("/update_speed", handleupdate_speed);
+	server.on("/act", handleact);
+	server.begin();
 
-  while (!start_flag)
-  {
-    server.handleClient();
-  }
+	while (!start_flag)
+	{
+		server.handleClient();
+	}
 
-  attachInterrupt(digitalPinToInterrupt(ENCODER_A), ISR_enc_A, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(ENCODER_C), ISR_enc_C, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(CRASH_BTN), crashDetect, RISING);
+	attachInterrupt(digitalPinToInterrupt(ENCODER_A), ISR_enc_A, CHANGE);
+	attachInterrupt(digitalPinToInterrupt(ENCODER_C), ISR_enc_C, CHANGE);
+	attachInterrupt(digitalPinToInterrupt(CRASH_BTN), crashDetect, RISING);
 
-  digitalWrite(MOTOR_A_POS, HIGH);
-  digitalWrite(MOTOR_A_NEG, LOW);
-  digitalWrite(MOTOR_B_POS, HIGH);
-  digitalWrite(MOTOR_B_NEG, LOW);
+	digitalWrite(MOTOR_A_POS, HIGH);
+	digitalWrite(MOTOR_A_NEG, LOW);
+	digitalWrite(MOTOR_B_POS, HIGH);
+	digitalWrite(MOTOR_B_NEG, LOW);
 
-  startUpProcess();
+	startUpProcess();
 }
 
 void loop()
 {
-  server.handleClient();
+	server.handleClient();
 
-  speedDetect();
+	speedDetect();
 
-  if (!pre_deceleration) crashPreProcess();
+	if (!pre_deceleration)
+		crashPreProcess();
 
-  long avg = ((encoder_A + encoder_C) / 2) - odometer + amendment;
+	long avg = ((encoder_A + encoder_C) / 2) - odometer + amendment;
 
-  if (avg > odometer && odometer != 0)
-  {
-    digitalWrite(MOTOR_A_NEG, LOW);
-    digitalWrite(MOTOR_B_NEG, LOW);
-    flag = 2; //标识一切完成
-  }
+	if (avg > odometer && odometer != 0)
+	{
+		digitalWrite(MOTOR_A_NEG, LOW);
+		digitalWrite(MOTOR_B_NEG, LOW);
+		flag = 2; //标识一切完成
+	}
 }
 
 void handleRoot()
 {
-  String html = webpage;
-  server.send(200, "text/html", html);
+	String html = webpage;
+	server.send(200, "text/html", html);
 }
 
 void handleupdate_varible()
 {
-  server.send(
-    200,
-    "text/json",
-    "{ \"ena\":" + String(encoder_A) +
-      ", \"enc\":" + String(encoder_C) +
-      ", \"odometer\":" + String(odometer) +
-      '}');
-
-  // 在WebConsole里, enc对应enl(左) ena对于enr(右) 就是反过来的
+	server.send(
+		200,
+		"text/json",
+		"{ \"ena\":" + String(encoder_A) +
+			", \"enc\":" + String(encoder_C) +
+			", \"odometer\":" + String(odometer) +
+			'}');
 }
 
 void handleact()
 {
-  String argument = server.arg("selector");
-  if (argument == "0")
-  {
-    start_flag = true;
-    server.send(200, "text/plain", "ok");
-  }
-  else if (argument == "1")
-  {
-    encoder_A = encoder_C = 0;
-    odometer = 0;
-    server.send(200, "text/plain", "ok");
-  }
+	String argument = server.arg("selector");
+	if (argument == "0")
+	{
+		start_flag = true;
+		server.send(200, "text/plain", "ok");
+	}
+	else if (argument == "1")
+	{
+		encoder_A = encoder_C = 0;
+		odometer = 0;
+		server.send(200, "text/plain", "ok");
+	}
 }
 
 void handleupdate_speed() // TODO 左右测试
 {
-  server.send(200, "text/json", "{ \"left\":" + String(velocity_B) + ", \"right\":" + String(velocity_A) + " }");
+	server.send(200, "text/json", "{ \"left\":" + String(velocity_B) + ", \"right\":" + String(velocity_A) + " }");
 }
 
 ICACHE_RAM_ATTR void ISR_enc_A()
 {
-  encoder_A++;
+	encoder_A++;
 }
 
 ICACHE_RAM_ATTR void ISR_enc_C()
 {
-  encoder_C++;
+	encoder_C++;
 }
 
 ICACHE_RAM_ATTR void crashDetect()
 {
-  digitalWrite(MOTOR_A_POS, LOW);
-  digitalWrite(MOTOR_A_NEG, HIGH);
-  digitalWrite(MOTOR_B_POS, LOW);
-  digitalWrite(MOTOR_B_NEG, HIGH);
+	digitalWrite(MOTOR_A_POS, LOW);
+	digitalWrite(MOTOR_A_NEG, HIGH);
+	digitalWrite(MOTOR_B_POS, LOW);
+	digitalWrite(MOTOR_B_NEG, HIGH);
 
-  digitalWrite(LED_BUILTIN, HIGH);
-  digitalWrite(4, LOW);
+	digitalWrite(LED_BUILTIN, HIGH);
+	digitalWrite(4, LOW);
 
-  flag = 1;
-  odometer = (encoder_A + encoder_C) / 2;
+	flag = 1;
+	odometer = (encoder_A + encoder_C) / 2;
 }
 
 void speedDetect()
 {
-  curr = millis();
-  if (curr - prev >= 40) // 检测时间阈值
-  {
-    // A as left...
-    velocity_A = (encoder_A - temp_ena);
-    velocity_B = (encoder_C - temp_enc);
+	curr = millis();
+	if (curr - prev >= 40) // 检测时间阈值
+	{
+		// A as left...
+		velocity_A = (encoder_A - temp_ena);
+		velocity_B = (encoder_C - temp_enc);
 
-    if (!(pre_deceleration && flag == 0)) speedAdjust();
-    // 指定在预减速完成后的区间内不进行速度调整
+		if (!(pre_deceleration && flag == 0))
+			speedAdjust();
+		// 指定在预减速完成后的区间内不进行速度调整
 
-    temp_ena = encoder_A;
-    temp_enc = encoder_C;
-    prev = millis();
-  }
+		temp_ena = encoder_A;
+		temp_enc = encoder_C;
+		prev = millis();
+	}
 }
 
 void speedAdjust()
 {
-  // encoders 是正的 pwm是反的
-  // PWM:A -> 右轮, PWM:B -> 左轮;
-  if (flag == 0)
-  {
-    // 正转时
-    if (encoder_A < encoder_C)
-    {
-      pwm_A = 124;
-      pwm_B = 90;
-    }
-    else
-    {
-      pwm_B = 110;
-      pwm_A = 90;
-    }
-  }
-  else if (flag == 1)
-  {
-    // 行进方向的弧形左侧偏移
-    if (encoder_A < encoder_C)
-    {
-      pwm_A = 144;
-      pwm_B = 90;
-    }
-    else
-    {
-      pwm_B = 100;
-      pwm_A = 90;
-    }
-  }
-  else
-  {
-    // only for debug 结束时
-    pwm_A = 0;
-    pwm_B = 0;
-  }
-  analogWrite(PWMA, pwm_A);
-  analogWrite(PWMB, pwm_B);
+	// encoders 是正的 pwm是反的
+	// PWM:A -> 右轮, PWM:B -> 左轮;
+	if (flag == 0)
+	{
+		// 正转时
+		if (encoder_A < encoder_C)
+		{
+			pwm_A = 124;
+			pwm_B = 90;
+		}
+		else
+		{
+			pwm_B = 110;
+			pwm_A = 90;
+		}
+	}
+	else if (flag == 1)
+	{
+		// 行进方向的弧形左侧偏移
+		if (encoder_A < encoder_C)
+		{
+			pwm_A = 144;
+			pwm_B = 90;
+		}
+		else
+		{
+			pwm_B = 100;
+			pwm_A = 90;
+		}
+	}
+	else
+	{
+		// only for debug 结束时
+		pwm_A = 0;
+		pwm_B = 0;
+	}
+	analogWrite(PWMA, pwm_A);
+	analogWrite(PWMB, pwm_B);
 }
 
 void crashPreProcess()
 {
-  // slow down the vehicle to prevent the vehicle from crashing
-  
-  if (encoder_A >= DECELERATION_THRESOLD || encoder_C >= DECELERATION_THRESOLD)
-  {
-    for (int i = 0;i < 9; i++) {
-      int subtractor = 5*i;
-      analogWrite(PWMA, 120 - subtractor);
-      analogWrite(PWMB, 120 - subtractor);
-      delay(100);
-    }
-    pre_deceleration = true;
-  }
+	// slow down the vehicle to prevent the vehicle from crashing
 
+	if (encoder_A >= DECELERATION_THRESOLD || encoder_C >= DECELERATION_THRESOLD)
+	{
+		for (int i = 0; i < 9; i++)
+		{
+			int subtractor = 5 * i;
+			analogWrite(PWMA, 120 - subtractor);
+			analogWrite(PWMB, 120 - subtractor);
+			delay(100);
+		}
+		pre_deceleration = true;
+	}
 }
 
 void startUpProcess()
 {
-  for (int i = 0;i < 20; i++) {
-    int additor = 2;
-    analogWrite(PWMA, 80 + additor);
-    analogWrite(PWMB, 80 + additor);
-    delay(2);
-    // 看起来是延迟小一点好一些
-  }
+	for (int i = 0; i < 20; i++)
+	{
+		int additor = 2;
+		analogWrite(PWMA, 80 + additor);
+		analogWrite(PWMB, 80 + additor);
+		delay(2);
+		// 看起来是延迟小一点好一些
+	}
 
-  analogWrite(PWMA, pwm_A);
-  analogWrite(PWMB, pwm_B);
+	analogWrite(PWMA, pwm_A);
+	analogWrite(PWMB, pwm_B);
 
-  curr = prev = millis();
+	curr = prev = millis();
 }
