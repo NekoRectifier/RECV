@@ -5,10 +5,10 @@ const char webpage[] PROGMEM = R"=====(
 <head>
     <title>ESP8266 Web Console</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no"/>
-    <meta name="renderer" content="webkit"/>
-    <meta name="force-rendering" content="webkit"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
+    <meta name="renderer" content="webkit" />
+    <meta name="force-rendering" content="webkit" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
     <script src="https://cdn.jsdelivr.net/npm/mdui@1.0.2/dist/js/mdui.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mdui@1.0.2/dist/css/mdui.min.css" />
 </head>
@@ -60,20 +60,20 @@ const char webpage[] PROGMEM = R"=====(
                         </ul>
 
                         <div class="mdui-divider"></div>
-                        
+
                     </div>
 
                     <div class="mdui-card-actions ">
 
-                        <button class="mdui-btn mdui-ripple mdui-color-blue-800 " onclick="send(0)">
+                        <button class="mdui-btn mdui-ripple mdui-color-blue-800 " onclick="notify(0)">
                             Start Sequence
                         </button>
 
-                        <button class="mdui-btn mdui-ripple mdui-color-grey-400" onclick="send(1)">
+                        <button class="mdui-btn mdui-ripple mdui-color-grey-400" onclick="notify(1)">
                             Clear Encoders / Odometer
                         </button>
 
-                        <!-- <button class="mdui-btn mdui-ripple mdui-color-red-500" onclick="send(2)">Restart</button> -->
+                        <!-- <button class="mdui-btn mdui-ripple mdui-color-red-500" onclick="notify(2)">Restart</button> -->
                     </div>
                 </div>
             </div>
@@ -101,15 +101,112 @@ const char webpage[] PROGMEM = R"=====(
                 </div>
             </div>
 
+            <div class="mdui-p-a-1 mdui-col-md-4 mdui-col-xs-12">
+                <div class="mdui-card mdui-m-y-1 mdui-m-r">
+                    <div class="mdui-card-primary">
+                        <div class="mdui-card-primary-title">PWM Modify:</div>
+                        <div class="mdui-card-primary-subtitle">[DEBUG ONLY] apply them before vehicle start</div>
+                    </div>
+                    <div class="mdui-card-content">
+
+                        <div class="mdui-textfield mdui-textfield-floating-label">
+                            <i class="mdui-icon material-icons">av_timer</i>
+                            <label class="mdui-textfield-label">Front - Left</label>
+                            <input class="mdui-textfield-input" type="number" id="pwm_F_L" value="90"
+                                placeholder="PWM-Left" />
+                        </div>
+
+                        <div class="mdui-textfield mdui-textfield-floating-label">
+                            <i class="mdui-icon material-icons">av_timer</i>
+                            <label class="mdui-textfield-label">Front - Right</label>
+                            <input class="mdui-textfield-input" type="number" id="pwm_F_R" value="90"
+                                placeholder="PWM-Right" />
+                        </div>
+
+                        <div class="mdui-textfield mdui-textfield-floating-label">
+                            <i class="mdui-icon material-icons">av_timer</i>
+                            <label class="mdui-textfield-label">Back - Left</label>
+                            <input class="mdui-textfield-input" type="number" id="pwm_B_L" value="90"
+                                placeholder="PWM-Left" />
+                        </div>
+
+                        <div class="mdui-textfield mdui-textfield-floating-label">
+                            <i class="mdui-icon material-icons">av_timer</i>
+                            <label class="mdui-textfield-label">Back - Right</label>
+                            <input class="mdui-textfield-input" type="number" id="pwm_B_R" value="90"
+                                placeholder="PWM-Right" />
+                        </div>
+
+                        <div class="mdui-divider"></div>
+
+                    </div>
+
+                    <div class="mdui-card-actions">
+
+                        <button class="mdui-btn mdui-color-green mdui-ripple" onclick="send(0)">apply</button>
+
+                        <button class="mdui-btn mdui-color-yellow mdui-ripple" onclick="util(0)">clear</button>
+
+                    </div>
+
+                </div>
+            </div>
+
         </div>
 </body>
 
 
 <script>
-    function send(para) {
+    function notify(para) {
         var xhttp = new XMLHttpRequest();
         xhttp.open("GET", "act?selector=" + para, true);
         xhttp.send();
+    }
+
+    function send(para) {
+        var xhttp = new XMLHttpRequest();
+        xhttp.open("POST", "modify");
+        xhttp.setRequestHeader('Content-Type', 'application/json');
+
+        if (para == 0) {
+            json = "{ \"pwm_F_L\":\"" +
+                document.getElementById("pwm_F_L").value +
+                "\", \"pwm_F_R\":\"" +
+                document.getElementById("pwm_F_R").value +
+                "\", \"pwm_B_L\":\"" +
+                document.getElementById("pwm_B_L").value +
+                "\", \"pwm_B_R\":\"" +
+                document.getElementById("pwm_B_R").value +
+                "\" }";
+            xhttp.send(JSON.stringify(json))
+
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    mdui.snackbar({
+                        message: 'PWM values have been successfully applied',
+                        position: 'right-top',
+                    });
+                } else if (this.status == 500) {
+                    mdui.snackbar({
+                        message: 'Internal server error',
+                        position: 'right-top',
+                    });
+                }
+            }
+        }
+    }
+
+    function util(para) {
+        switch (para) {
+            case 0:
+                document.getElementById("pwm_F_L").value = 130;
+                document.getElementById("pwm_F_R").value = 90;
+                document.getElementById("pwm_B_L").value = 100;
+                document.getElementById("pwm_B_R").value = 90;
+                break;
+            default:
+                break;
+        }
     }
 
     setInterval(function () {
@@ -143,7 +240,7 @@ const char webpage[] PROGMEM = R"=====(
         };
         yhttp.open("GET", "update_speed", true);
         yhttp.send();
-        
+
     }
 
 </script>

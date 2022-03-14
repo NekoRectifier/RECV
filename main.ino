@@ -1,5 +1,6 @@
 #include <ESP8266WiFiMulti.h> //  ESP8266WiFiMulti库
 #include <ESP8266WebServer.h>
+#include <ArduinoJson.h>
 #include "index.h"
 
 //#define MOTOR_A_POS 3
@@ -25,7 +26,9 @@
 #define DECELERATION_THRESOLD 29718 // 395cm
 // 不同车道需切换
 
-#define amendment 1000
+#define amendment 700
+
+#define debug true
 
 volatile long encoder_A = 0;
 volatile long encoder_C = 0;
@@ -36,13 +39,16 @@ long prev_A, prev_C = 0;
 volatile long odometer = 0;
 double velocity_A = 0.0;
 double velocity_B = 0.0;
-short pwm_A = 120; // now correspond to 'C'
-short pwm_B = 120; // now correspond to 'A'
+short pwm_A = 120;
+short pwm_B = 120;
+
+short pwm_F_L = pwm_F_R = pwm_B_L = pwm_B_R = 250;
 
 // flags here
 volatile byte flag = 0;
 bool start_flag = false;
 bool pre_deceleration = false;
+bool pass = false;
 
 unsigned long curr, prev = 0;
 
@@ -77,11 +83,20 @@ void setup()
 	server.on("/update_varible", handleupdate_varible);
 	server.on("/update_speed", handleupdate_speed);
 	server.on("/act", handleact);
+	server.on("/modify", handlemodify);
 	server.begin();
 
 	while (!start_flag)
 	{
 		server.handleClient();
+	}
+
+	if (debug)
+	{
+		while (!pass)
+		{
+			server.handleClient();
+		}
 	}
 
 	attachInterrupt(digitalPinToInterrupt(ENCODER_A), ISR_enc_A, CHANGE);
@@ -148,6 +163,30 @@ void handleact()
 	}
 }
 
+void handlemodify()
+{
+	const size_t capacity = JSON_BOJECT_SIZE(4) + 40;
+	// 未知大小可能出现问题
+	DynamicJsonDocument doc(capacity);
+
+	if (server.hasArg("plain") == true)
+	{
+		json = server.arg("plain");
+		deserializeJson(doc, json);
+		pwm_F_L = doc["pwm_F_L"].as<short>();
+		pwm_F_R = doc["pwm_F_R"].as<short>();
+		pwm_B_L = doc["pwm_B_L"].as<short>();
+		pwm_B_R = doc["pwm_B_R"].as<short>();
+
+		pass = true;
+		server.send(200, "text/plain", "ok");
+	}
+	else
+	{
+		server.send(500, "text/plain", "error");
+	}
+}
+
 void handleupdate_speed() // TODO 左右测试
 {
 	server.send(200, "text/json", "{ \"left\":" + String(velocity_B) + ", \"right\":" + String(velocity_A) + " }");
@@ -198,15 +237,14 @@ void speedDetect()
 
 void speedAdjust()
 {
-	// encoders 是正的 pwm是反的
 	// PWM:A -> 右轮, PWM:B -> 左轮;
 	if (flag == 0)
 	{
-		// 正转时
+		// 正转时 在远处体现出弧线向左
 		if (encoder_A < encoder_C)
 		{
-			pwm_A = 124;
-			pwm_B = 90;
+			pwm_A = pwm_F_L;
+			pwm_B = pwm_F_R;
 		}
 		else
 		{
@@ -216,11 +254,12 @@ void speedAdjust()
 	}
 	else if (flag == 1)
 	{
-		// 行进方向的弧形左侧偏移
+		// 行进方向的远处左弧线偏移
+		// 近处右弧线偏移
 		if (encoder_A < encoder_C)
 		{
-			pwm_A = 144;
-			pwm_B = 90;
+			pwm_A = pwm_B_L;
+			pwm_B = pwm_B_R;
 		}
 		else
 		{
@@ -230,9 +269,12 @@ void speedAdjust()
 	}
 	else
 	{
-		// only for debug 结束时
-		pwm_A = 0;
-		pwm_B = 0;
+		if (debug)
+		{
+			pwm_A = 0;
+			pwm_B = 0;
+		}
+		
 	}
 	analogWrite(PWMA, pwm_A);
 	analogWrite(PWMB, pwm_B);
