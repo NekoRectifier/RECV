@@ -211,7 +211,7 @@ const char webpage[] PROGMEM = R"=====(
 
     setInterval(function () {
         getData();
-    }, 400);
+    }, 500);
 
     function getData() {
 

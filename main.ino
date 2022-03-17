@@ -28,7 +28,7 @@
 
 #define amendment 700
 
-#define debug true
+#define debug false
 
 volatile long encoder_A = 0;
 volatile long encoder_C = 0;
@@ -42,7 +42,10 @@ double velocity_B = 0.0;
 short pwm_A = 120;
 short pwm_B = 120;
 
-short pwm_F_L = pwm_F_R = pwm_B_L = pwm_B_R = 250;
+short pwm_F_L = 250;
+short pwm_F_R = 250;
+short pwm_B_L = 250;
+short pwm_B_R = 250;
 
 // flags here
 volatile byte flag = 0;
@@ -91,14 +94,6 @@ void setup()
 		server.handleClient();
 	}
 
-	if (debug)
-	{
-		while (!pass)
-		{
-			server.handleClient();
-		}
-	}
-
 	attachInterrupt(digitalPinToInterrupt(ENCODER_A), ISR_enc_A, CHANGE);
 	attachInterrupt(digitalPinToInterrupt(ENCODER_C), ISR_enc_C, CHANGE);
 	attachInterrupt(digitalPinToInterrupt(CRASH_BTN), crashDetect, RISING);
@@ -117,8 +112,8 @@ void loop()
 
 	speedDetect();
 
-	if (!pre_deceleration)
-		crashPreProcess();
+	// if (!pre_deceleration)
+	//  crashPreProcess();
 
 	long avg = ((encoder_A + encoder_C) / 2) - odometer + amendment;
 
@@ -165,25 +160,27 @@ void handleact()
 
 void handlemodify()
 {
-	const size_t capacity = JSON_BOJECT_SIZE(4) + 40;
 	// 未知大小可能出现问题
-	DynamicJsonDocument doc(capacity);
 
 	if (server.hasArg("plain") == true)
 	{
-		json = server.arg("plain");
-		deserializeJson(doc, json);
+		StaticJsonDocument<200> doc;
+		String json_text = server.arg("plain");
+		DeserializationError error = deserializeJson(doc, json_text);
 		pwm_F_L = doc["pwm_F_L"].as<short>();
 		pwm_F_R = doc["pwm_F_R"].as<short>();
 		pwm_B_L = doc["pwm_B_L"].as<short>();
 		pwm_B_R = doc["pwm_B_R"].as<short>();
 
-		pass = true;
-		server.send(200, "text/plain", "ok");
-	}
-	else
-	{
-		server.send(500, "text/plain", "error");
+		if (!error)
+		{
+			pass = true;
+			server.send(200, "text/plain", "ok");
+		}
+		else
+		{
+			server.send(500, "text/plain", "error");
+		}
 	}
 }
 
@@ -219,7 +216,7 @@ ICACHE_RAM_ATTR void crashDetect()
 void speedDetect()
 {
 	curr = millis();
-	if (curr - prev >= 40) // 检测时间阈值
+	if (curr - prev >= 100) // 检测时间阈值
 	{
 		// A as left...
 		velocity_A = (encoder_A - temp_ena);
@@ -243,8 +240,16 @@ void speedAdjust()
 		// 正转时 在远处体现出弧线向左
 		if (encoder_A < encoder_C)
 		{
-			pwm_A = pwm_F_L;
-			pwm_B = pwm_F_R;
+			if (debug)
+			{
+				pwm_A = pwm_F_L;
+				pwm_B = pwm_F_R;
+			}
+			else
+			{
+				pwm_A = 130;
+				pwm_B = 90;
+			}
 		}
 		else
 		{
@@ -258,8 +263,16 @@ void speedAdjust()
 		// 近处右弧线偏移
 		if (encoder_A < encoder_C)
 		{
-			pwm_A = pwm_B_L;
-			pwm_B = pwm_B_R;
+			if (debug)
+			{
+				pwm_A = pwm_F_L;
+				pwm_B = pwm_F_R;
+			}
+			else
+			{
+				pwm_A = 130;
+				pwm_B = 90;
+			}
 		}
 		else
 		{
@@ -269,12 +282,8 @@ void speedAdjust()
 	}
 	else
 	{
-		if (debug)
-		{
-			pwm_A = 0;
-			pwm_B = 0;
-		}
-		
+		pwm_A = 0;
+		pwm_B = 0;
 	}
 	analogWrite(PWMA, pwm_A);
 	analogWrite(PWMB, pwm_B);
@@ -297,7 +306,8 @@ void crashPreProcess()
 	}
 }
 
-void startUpProcess()
+void startUpProcess() //可能问题
+
 {
 	for (int i = 0; i < 20; i++)
 	{
