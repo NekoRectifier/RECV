@@ -1,3 +1,5 @@
+// 预减速已禁用
+
 #include <ESP8266WiFiMulti.h> //  ESP8266WiFiMulti库
 #include <ESP8266WebServer.h>
 #include <ArduinoJson.h>
@@ -207,7 +209,6 @@ ICACHE_RAM_ATTR void crashDetect()
 	digitalWrite(MOTOR_B_NEG, HIGH);
 
 	digitalWrite(LED_BUILTIN, HIGH);
-	digitalWrite(4, LOW);
 
 	flag = 1;
 	odometer = (encoder_A + encoder_C) / 2;
@@ -216,14 +217,12 @@ ICACHE_RAM_ATTR void crashDetect()
 void speedDetect()
 {
 	curr = millis();
-	if (curr - prev >= 100) // 检测时间阈值
+	if (curr - prev >= 40) // 检测时间阈值
 	{
-		// A as left...
 		velocity_A = (encoder_A - temp_ena);
 		velocity_B = (encoder_C - temp_enc);
 
-		if (!(pre_deceleration && flag == 0))
-			speedAdjust();
+		if (!(pre_deceleration && flag == 0)) speedAdjust();
 		// 指定在预减速完成后的区间内不进行速度调整
 
 		temp_ena = encoder_A;
@@ -237,7 +236,6 @@ void speedAdjust()
 	// PWM:A -> 右轮, PWM:B -> 左轮;
 	if (flag == 0)
 	{
-		// 正转时 在远处体现出弧线向左
 		if (encoder_A < encoder_C)
 		{
 			if (debug)
@@ -247,26 +245,24 @@ void speedAdjust()
 			}
 			else
 			{
-				pwm_A = 130;
+				pwm_A = 134;
 				pwm_B = 90;
 			}
 		}
 		else
 		{
-			pwm_B = 110;
+			pwm_B = 109;
 			pwm_A = 90;
 		}
 	}
 	else if (flag == 1)
 	{
-		// 行进方向的远处左弧线偏移
-		// 近处右弧线偏移
 		if (encoder_A < encoder_C)
 		{
 			if (debug)
 			{
-				pwm_A = pwm_F_L;
-				pwm_B = pwm_F_R;
+				pwm_A = pwm_B_L;
+				pwm_B = pwm_B_R;
 			}
 			else
 			{
@@ -276,7 +272,7 @@ void speedAdjust()
 		}
 		else
 		{
-			pwm_B = 100;
+			pwm_B = 101;
 			pwm_A = 90;
 		}
 	}
