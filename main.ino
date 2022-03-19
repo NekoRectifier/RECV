@@ -1,7 +1,6 @@
-// 预减速已禁用
-
 #include <ESP8266WiFiMulti.h> //  ESP8266WiFiMulti库
 #include <ESP8266WebServer.h>
+#include <ESP8266WiFi.h>
 #include <ArduinoJson.h>
 #include "index.h"
 
@@ -23,12 +22,12 @@
 #define PWMA D5
 #define PWMB D6
 
-#define TOTAL_PULSE_WHEEL 1560
+#define TOTAL_PULSE_WHEEL 1560 * 2
 #define C 20.7345
-#define DECELERATION_THRESOLD 29718 // 395cm
+#define DECELERATION_THRESOLD 57180 // 255cm
 // 不同车道需切换
 
-#define amendment 700
+#define amendment 1100
 
 #define debug false
 
@@ -79,11 +78,28 @@ void setup()
 	pinMode(ENCODER_C, INPUT);
 	pinMode(CRASH_BTN, INPUT);
 
-	wifi.addAP("叁壹零", "sanyiling");
-	while (wifi.run() != WL_CONNECTED)
-	{
-		delay(50);
-	}
+	//  wifi.addAP("叁壹零", "sanyiling");
+	//  while (wifi.run() != WL_CONNECTED)
+	//  {
+	//    delay(50);
+	//  }
+	//  server.on("/", handleRoot);
+	//  server.on("/update_varible", handleupdate_varible);
+	//  server.on("/update_speed", handleupdate_speed);
+	//  server.on("/act", handleact);
+	//  server.on("/modify", handlemodify);
+	//  server.begin();
+	//
+	//  while (!start_flag)
+	//  {
+	//    server.handleClient();
+	//  }
+
+	const char *ssid = "ESP8266";
+	const char *password = "12345678";
+
+	WiFi.softAP(ssid, password);
+
 	server.on("/", handleRoot);
 	server.on("/update_varible", handleupdate_varible);
 	server.on("/update_speed", handleupdate_speed);
@@ -95,6 +111,8 @@ void setup()
 	{
 		server.handleClient();
 	}
+
+	// delay(5000);
 
 	attachInterrupt(digitalPinToInterrupt(ENCODER_A), ISR_enc_A, CHANGE);
 	attachInterrupt(digitalPinToInterrupt(ENCODER_C), ISR_enc_C, CHANGE);
@@ -114,8 +132,8 @@ void loop()
 
 	speedDetect();
 
-	// if (!pre_deceleration)
-	//  crashPreProcess();
+	if (!pre_deceleration)
+		crashPreProcess();
 
 	long avg = ((encoder_A + encoder_C) / 2) - odometer + amendment;
 
@@ -222,7 +240,8 @@ void speedDetect()
 		velocity_A = (encoder_A - temp_ena);
 		velocity_B = (encoder_C - temp_enc);
 
-		if (!(pre_deceleration && flag == 0)) speedAdjust();
+		if (!(pre_deceleration && flag == 0))
+			speedAdjust();
 		// 指定在预减速完成后的区间内不进行速度调整
 
 		temp_ena = encoder_A;
@@ -245,13 +264,13 @@ void speedAdjust()
 			}
 			else
 			{
-				pwm_A = 134;
+				pwm_A = 131;
 				pwm_B = 90;
 			}
 		}
 		else
 		{
-			pwm_B = 109;
+			pwm_B = 110;
 			pwm_A = 90;
 		}
 	}
@@ -266,13 +285,13 @@ void speedAdjust()
 			}
 			else
 			{
-				pwm_A = 130;
+				pwm_A = 114;
 				pwm_B = 90;
 			}
 		}
 		else
 		{
-			pwm_B = 101;
+			pwm_B = 116;
 			pwm_A = 90;
 		}
 	}
@@ -296,7 +315,7 @@ void crashPreProcess()
 			int subtractor = 5 * i;
 			analogWrite(PWMA, 120 - subtractor);
 			analogWrite(PWMB, 120 - subtractor);
-			delay(100);
+			delay(20);
 		}
 		pre_deceleration = true;
 	}
@@ -310,7 +329,7 @@ void startUpProcess() //可能问题
 		int additor = 2;
 		analogWrite(PWMA, 80 + additor);
 		analogWrite(PWMB, 80 + additor);
-		delay(2);
+		delay(1);
 		// 看起来是延迟小一点好一些
 	}
 
