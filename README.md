@@ -15,6 +15,3 @@ The source code of a reciprocating electronically controlled vehicles using Node
   We choose to use ESP8266 as the microcontroller.
 
 ![esp](images/esp8266_devkit.png)  
-
-
-![web_console](images/web_console.png)
