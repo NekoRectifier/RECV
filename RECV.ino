@@ -7,7 +7,14 @@ const char *passwd = "86309602";
 ESP8266WebServer server(80);
 //TODO may change server port to 443 soon
 
+// pin mode definition
 uint8 B_LED = LED_BUILTIN;
+uint8 PWM = D2;
+uint8 IN2 = D3;
+uint8 IN1 = D4;
+
+uint8 ENC_A = D6;
+uint8 ENC_B = D5;
 
 void setup() {
     digitalWrite(B_LED, HIGH);
