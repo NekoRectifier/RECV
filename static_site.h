@@ -1,4 +1,4 @@
-const char site[] = R"=====(
+const char static_site[] = R"=====(
     <!DOCTYPE html>
 <html>
 
@@ -9,11 +9,11 @@ const char site[] = R"=====(
   <meta name="renderer" content="webkit" />
   <meta name="force-rendering" content="webkit" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-  <link rel="stylesheet" href="./mdui-v1.0.2/css/mdui.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/mdui@1.0.2/dist/css/mdui.min.css" />
 
   <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script>
-  <script src="./mdui-v1.0.2/js/mdui.min.js"></script>
-  <script src="./echarts/echarts.js"></script>
+  <script src="https://unpkg.com/mdui@1.0.2/dist/js/mdui.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"></script>
   
 </head>
 
