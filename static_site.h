@@ -135,6 +135,7 @@ const char static_site[] = R"=====(
 
 <script>
 
+  var is_started = false;
   var status_icon = document.getElementById("status_icon");
   var status_text = document.getElementById("status_text");
   var loop_index = 0;
@@ -158,21 +159,24 @@ const char static_site[] = R"=====(
       xhr.send();
     });
   }
+  
+  function changeLinkStatus(status) {
+    if (status) {
+      status_icon.innerHTML = "cloud";
+      status_text.innerHTML = "CONNECTED";
+    } else {
+      status_icon.innerHTML = "cloud_off";
+      status_text.innerHTML = "NOT CONNECTED";
+    }
+  }
 
   function heartbeat() {
-
     if (hb_lever == 1) return null;
 
     GETRequest('heartbeat')
       .then(function (res) {
         console.log(res)
-        if (res == "beat_ack") {
-          status_icon.innerHTML = "cloud";
-          status_text.innerHTML = "CONNECTED";
-        } else {
-          status_icon.innerHTML = "cloud_off";
-          status_text.innerHTML = "NOT CONNECTED";
-        }
+        changeLinkStatus(res == "beat_ack")
       })
       .catch(function (err) {
         console.log(err);
@@ -186,14 +190,7 @@ const char static_site[] = R"=====(
   }, 200);
 
   function loop() {
-    if (loop_index == 1) {
-      // do sth else...
-      // update graph
-    } else if (loop_index == 15) {
-      hb_lever = 1;
-    }
-
-    heartbeat();
+    if (!is_started) heartbeat();
 
   }
 </script>
