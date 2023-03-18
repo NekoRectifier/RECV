@@ -1,5 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include "static_site.h"
 
 const char *ssid = "RECV";
 const char *passwd = "86309602";
@@ -37,11 +38,15 @@ void setup() {
     // enable light
     blink(2, 110, B_LED);
 
-    //mechanics init
+    //mechanics init...
 
+
+
+    server.on("/", handleIndex);
+    server.on("/heartbeat", handleHeartbeat);
 
     server.begin();
-    server.on("/", handleIndex);
+    blink(1, 500, A_LED);
 }
 
 void loop() {
@@ -64,5 +69,9 @@ void blink(int times, int interval, uint led) {
 }
 
 void handleIndex() {
-    server.send(200, "text/html", "<h1>fuck</h1>");
+    server.send(200, "text/html", static_site);
+}
+
+void handleHeartbeat() {
+    server.send(200, "text/html", "ok");
 }
