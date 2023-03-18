@@ -73,5 +73,5 @@ void handleIndex() {
 }
 
 void handleHeartbeat() {
-    server.send(200, "text/html", "ok");
+    server.send(200, "text/plain", "beat_ack");
 }

@@ -1,20 +1,20 @@
 const char static_site[] = R"=====(
-    <!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="en-US">
 
 <head>
   <title>ESP8266 Web Console</title>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
   <meta name="renderer" content="webkit" />
   <meta name="force-rendering" content="webkit" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta http-equiv="X-UA-Compatible" contxent="IE=edge,chrome=1" />
   <link rel="stylesheet" href="https://unpkg.com/mdui@1.0.2/dist/css/mdui.min.css" />
 
   <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script>
   <script src="https://unpkg.com/mdui@1.0.2/dist/js/mdui.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"></script>
-  
+
 </head>
 
 <body class="mdui-theme-layout-dark">
@@ -23,7 +23,7 @@ const char static_site[] = R"=====(
     <div class="mdui-toolbar mdui-color-theme">
       <i class="mdui-icon material-icons">developer_mode</i>
       <p class="mdui-typo-headline">NodeMCU Console</p>
-      
+
       <div class="mdui-toolbar-spacer"></div>
 
       <a href="" class="mdui-btn mdui-btn-icon">
@@ -57,7 +57,7 @@ const char static_site[] = R"=====(
                 <div class="mdui-list-item-content">ENCODER:</div>
                 <span id="enc_c" style="font-weight:500;font-size: x-large;">0</span>
               </li>
-              
+
               <li class="mdui-list-item">
                 <i class="mdui-list-item-icon mdui-icon material-icons">av_timer</i>
                 <div class="mdui-list-item-content">ODOMETER:</div>
@@ -121,7 +121,7 @@ const char static_site[] = R"=====(
               <li class="mdui-list-item">
                 <i class="mdui-list-item-icon mdui-icon material-icons">slow_motion_video</i>
                 <div class="mdui-list-item-content">Current Speed: </div>
-                <span id="left_spd" style="font-weight:500;font-size: x-large;">N/A</span>
+                <span id="current_spd" style="font-weight:500;font-size: x-large;">N/A</span>
               </li>
             </ul>
           </div>
@@ -138,77 +138,64 @@ const char static_site[] = R"=====(
   var status_icon = document.getElementById("status_icon");
   var status_text = document.getElementById("status_text");
   var loop_index = 0;
+  var hb_lever = 0;
 
-  // gerneral xhr status check func
-  function xhr_check(xhr_package) {
-    if (xhr_check.readyState == 4 && xhr_check.status == 200) 
-    {
-      return true;
-    } else {
-      return false;
-    } 
+  function GETRequest(url) {
+    return new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', url);
+      xhr.setRequestHeader('Cache-Control', 'no-cache');
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          resolve(xhr.response);
+        } else {
+          reject(Error(xhr.statusText));
+        }
+      };
+      xhr.onerror = function () {
+        reject(Error('Network Error'));
+      };
+      xhr.send();
+    });
   }
 
   function heartbeat() {
-    new XMLHttpRequest()
-      .open("GET", "heartbeat", false)
-      .send()
-      .onreadystatechange = function () {
-        if (xhr_check(this) && status_icon.innerHTML() == "cloud_off") {
-          status_text.innerHTML("CONNECTED");
-          status_icon.innerHTML("cloud");
-        } else if ( !xhr_check(this) && status_icon.innerHTML() != "cloud_off") {
-          status_text.innerHTML("NOT CONNECTED");
-          status_icon.innerHTML("cloud_off");
+
+    if (hb_lever == 1) return null;
+
+    GETRequest('heartbeat')
+      .then(function (res) {
+        console.log(res)
+        if (res == "beat_ack") {
+          status_icon.innerHTML = "cloud";
+          status_text.innerHTML = "CONNECTED";
+        } else {
+          status_icon.innerHTML = "cloud_off";
+          status_text.innerHTML = "NOT CONNECTED";
         }
-    }
+      })
+      .catch(function (err) {
+        console.log(err);
+      })
   }
 
   setInterval(function () {
     loop();
-  }, 100);
+    loop_index++;
+    // caution: loop_index may exceed maxium limit
+  }, 200);
 
   function loop() {
     if (loop_index == 1) {
-      loop_index = 0;
       // do sth else...
       // update graph
+    } else if (loop_index == 15) {
+      hb_lever = 1;
     }
 
     heartbeat();
 
   }
-
-  function getData() {
-
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
-      if (this.readyState == 4 && this.status == 200) {
-        const json = this.responseText;
-        const jsonObj = JSON.parse(json);
-        document.getElementById("enc_a").innerHTML = jsonObj.ena;
-        document.getElementById("enc_c").innerHTML = jsonObj.enc;
-        document.getElementById("odometer").innerHTML = jsonObj.odometer;
-      }
-    };
-    xhttp.open("GET", "update_varible", true);
-    xhttp.send();
-    // above is updater for encoder A/C and odometer
-
-    var yhttp = new XMLHttpRequest();
-    yhttp.onreadystatechange = function () {
-      if (this.readyState == 4 && this.status == 200) {
-        const json = this.responseText;
-        const jsonObj = JSON.parse(json);
-        document.getElementById("left_spd").innerHTML = jsonObj.left;
-        document.getElementById("right_spd").innerHTML = jsonObj.right;
-      }
-    };
-    yhttp.open("GET", "update_speed", true);
-    yhttp.send();
-
-  }
-
 </script>
 
 </html>
