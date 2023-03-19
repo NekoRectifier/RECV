@@ -46,7 +46,7 @@ void setup() {
     server.on("/heartbeat", handleHeartbeat);
 
     server.begin();
-    blink(1, 500, A_LED);
+    blink(3, 200, A_LED);
 }
 
 void loop() {
