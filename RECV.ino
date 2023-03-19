@@ -15,8 +15,8 @@ uint8 PWM = D2;
 uint8 IN2 = D3;
 uint8 IN1 = D4;
 
-uint8 ENC_A = D6;
-uint8 ENC_B = D5;
+uint8 ENC_A = D5;
+uint8 ENC_B = D6;
 
 void setup() {
     // supress led from enabling
@@ -28,6 +28,8 @@ void setup() {
     // initiate pin mode
     pinMode(A_LED, OUTPUT); // BUILTIN LED
     pinMode(B_LED, OUTPUT); // BUILTIN LED
+    attachInterrupt(ENC_B, intterupt_B, CHANGE);
+    attachInterrupt(ENC_A, intterupt_A, CHANGE);
 
     WiFi.softAP(ssid, passwd);
     // enable lightings
@@ -66,6 +68,14 @@ void blink(int times, int interval, uint led) {
         digitalWrite(led, HIGH);
         delay(70);
     }
+}
+
+ICACHE_RAM_ATTR void intterupt_A() {
+    Serial.println("INTR A");
+}
+
+ICACHE_RAM_ATTR void intterupt_B() {
+    Serial.println("INTR B");
 }
 
 void handleIndex() {
